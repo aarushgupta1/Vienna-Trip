@@ -1,0 +1,154 @@
+import { redirect } from 'next/navigation';
+import { createAttraction } from '@/app/actions';
+import { generateTripDates, formatDateFull, CATEGORY_LABELS, CATEGORY_ICONS } from '@/lib/utils';
+import { Category } from '@/lib/types';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+
+export default function NewAttractionPage() {
+  async function handleSubmit(formData: FormData) {
+    'use server';
+    await createAttraction(formData);
+    redirect('/');
+  }
+
+  const tripDates = generateTripDates();
+  const categories = Object.keys(CATEGORY_LABELS) as Category[];
+
+  return (
+    <main className="min-h-screen bg-gray-50 py-10 px-4">
+      <div className="max-w-md mx-auto">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-800 text-sm mb-6 transition-colors"
+        >
+          <ArrowLeft size={15} />
+          Back to calendar
+        </Link>
+
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-7">
+          <h1 className="text-xl font-bold text-gray-900 mb-1">Add Attraction</h1>
+          <p className="text-sm text-gray-400 mb-7">Add a place to visit in Vienna</p>
+
+          <form action={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                Name <span className="text-red-400 normal-case font-normal">required</span>
+              </label>
+              <input
+                name="name"
+                type="text"
+                required
+                placeholder="e.g. Schönbrunn Palace"
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 placeholder-gray-300"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                Category
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {categories.map((cat, i) => (
+                  <label
+                    key={cat}
+                    className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 has-[:checked]:border-blue-400 has-[:checked]:bg-blue-50 transition-colors text-sm"
+                  >
+                    <input
+                      type="radio"
+                      name="category"
+                      value={cat}
+                      defaultChecked={i === 0}
+                      className="sr-only"
+                    />
+                    <span>{CATEGORY_ICONS[cat]}</span>
+                    <span className="text-gray-700 font-medium text-xs">{CATEGORY_LABELS[cat]}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                Description
+              </label>
+              <textarea
+                name="description"
+                rows={2}
+                placeholder="Brief description of the attraction..."
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-gray-50 placeholder-gray-300"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                Schedule for day
+              </label>
+              <select
+                name="scheduled_date"
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 text-gray-700"
+              >
+                <option value="">Unscheduled (add to calendar later)</option>
+                {tripDates.map((date) => (
+                  <option key={date} value={date}>
+                    {formatDateFull(date)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                  Start time
+                </label>
+                <input
+                  name="start_time"
+                  type="time"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                  End time
+                </label>
+                <input
+                  name="end_time"
+                  type="time"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                Notes & Tips
+              </label>
+              <textarea
+                name="notes"
+                rows={3}
+                placeholder="Booking links, ticket prices, tips for the family..."
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-gray-50 placeholder-gray-300"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Link
+                href="/"
+                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium text-center hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </Link>
+              <button
+                type="submit"
+                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors"
+              >
+                Add to Trip ✈️
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  );
+}
