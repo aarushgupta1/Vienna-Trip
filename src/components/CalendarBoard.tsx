@@ -89,8 +89,11 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
   const [createSlot, setCreateSlot] = useState<{ date: string; time: string } | null>(null);
   const [colWidth, setColWidth] = useState(200);
   const [conflictMsg, setConflictMsg] = useState<string | null>(null);
-  const [daysPerPage, setDaysPerPage] = useState(DAYS_PER_PAGE);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [daysPerPage, setDaysPerPage] = useState(() => {
+    const w = window.innerWidth;
+    return w < 640 ? 1 : w < 1024 ? 2 : DAYS_PER_PAGE;
+  });
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 640);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(() => {
     try { return new Set(JSON.parse(localStorage.getItem('vienna-checked') ?? '[]')); }
     catch { return new Set(); }
