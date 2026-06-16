@@ -4,16 +4,18 @@ import { useDroppable } from '@dnd-kit/core';
 import { Attraction } from '@/lib/types';
 import AttractionCard from './AttractionCard';
 import Link from 'next/link';
-import { Plus, Inbox } from 'lucide-react';
+import { Plus, Inbox, X } from 'lucide-react';
 
 interface UnscheduledSidebarProps {
   attractions: Attraction[];
   onAttractionClick: (a: Attraction) => void;
+  onClose?: () => void;
 }
 
 export default function UnscheduledSidebar({
   attractions,
   onAttractionClick,
+  onClose,
 }: UnscheduledSidebarProps) {
   const { setNodeRef, isOver } = useDroppable({ id: 'unscheduled' });
 
@@ -21,10 +23,20 @@ export default function UnscheduledSidebar({
     <div className="w-60 border-r border-gray-200 flex flex-col bg-white shrink-0">
       <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 shrink-0">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="font-semibold text-gray-700 text-sm">Unscheduled</h2>
-          <span className="text-xs text-gray-400 bg-gray-200 px-1.5 py-0.5 rounded-full">
-            {attractions.length}
-          </span>
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold text-gray-700 text-sm">Unscheduled</h2>
+            <span className="text-xs text-gray-400 bg-gray-200 px-1.5 py-0.5 rounded-full">
+              {attractions.length}
+            </span>
+          </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="sm:hidden p-1 rounded hover:bg-gray-200 text-gray-400 transition-colors"
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
         <Link
           href="/attractions/new"

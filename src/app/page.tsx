@@ -16,7 +16,7 @@ export default async function HomePage() {
           <MapPin size={18} className="text-blue-600" />
           <div>
             <span className="font-bold text-gray-900 text-base">Vienna Trip Planner</span>
-            <span className="ml-2 text-xs text-gray-400">Aug 6 – 16, 2026</span>
+            <span className="hidden sm:inline ml-2 text-xs text-gray-400">Aug 6 – 16, 2026</span>
           </div>
         </div>
         <div className="flex items-center gap-4">

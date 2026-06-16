@@ -30,7 +30,7 @@ import AttractionBlock from './AttractionBlock';
 import EditModal from './EditModal';
 import CreateModal from './CreateModal';
 import TimeLabels from './TimeLabels';
-import { ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen } from 'lucide-react';
 
 function DayHeader({
   date, count, note, onNoteChange,
@@ -89,6 +89,8 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
   const [createSlot, setCreateSlot] = useState<{ date: string; time: string } | null>(null);
   const [colWidth, setColWidth] = useState(200);
   const [conflictMsg, setConflictMsg] = useState<string | null>(null);
+  const [daysPerPage, setDaysPerPage] = useState(DAYS_PER_PAGE);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(() => {
     try { return new Set(JSON.parse(localStorage.getItem('vienna-checked') ?? '[]')); }
     catch { return new Set(); }
@@ -99,6 +101,21 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
   });
   const scrollRef = useRef<HTMLDivElement>(null);
   const [, startTransition] = useTransition();
+
+  useEffect(() => {
+    const update = () => {
+      const w = window.innerWidth;
+      const next = w < 640 ? 1 : w < 1024 ? 2 : DAYS_PER_PAGE;
+      setDaysPerPage((prev) => {
+        if (prev !== next) setCurrentPage(0);
+        return next;
+      });
+      setSidebarOpen(w >= 640);
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
   useEffect(() => {
     if (!conflictMsg) return;
@@ -169,10 +186,10 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
   );
 
   const TRIP_DATES = generateTripDates();
-  const totalPages = Math.ceil(TRIP_DATES.length / DAYS_PER_PAGE);
+  const totalPages = Math.ceil(TRIP_DATES.length / daysPerPage);
   const visibleDates = TRIP_DATES.slice(
-    currentPage * DAYS_PER_PAGE,
-    (currentPage + 1) * DAYS_PER_PAGE
+    currentPage * daysPerPage,
+    (currentPage + 1) * daysPerPage
   );
 
   const unscheduled = attractions.filter((a) => !a.scheduled_date);
@@ -267,17 +284,39 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex h-full overflow-hidden gap-3 bg-white">
-          <UnscheduledSidebar
-            attractions={unscheduled}
-            onAttractionClick={setEditingAttraction}
-          />
+        <div className="flex h-full overflow-hidden bg-white relative">
+          {/* Backdrop for mobile sidebar */}
+          {sidebarOpen && (
+            <div
+              className="sm:hidden absolute inset-0 z-40 bg-black/30"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
 
-          <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Sidebar: always visible on sm+, overlay on mobile */}
+          <div className={[
+            'z-50 h-full sm:static absolute top-0 left-0 transition-transform duration-200',
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0',
+          ].join(' ')}>
+            <UnscheduledSidebar
+              attractions={unscheduled}
+              onAttractionClick={(a) => { setEditingAttraction(a); setSidebarOpen(false); }}
+              onClose={() => setSidebarOpen(false)}
+            />
+          </div>
+
+          <div className="flex-1 flex flex-col overflow-hidden min-w-0">
             {/* Single header row: nav arrows in time-label cell + day names — ONE border */}
             <div className="flex border-b border-gray-200 bg-white shrink-0">
               {/* Nav arrows share the time-label width column */}
               <div className="w-16 shrink-0 flex flex-row items-center justify-center border-r border-gray-100 gap-0.5">
+                <button
+                  onClick={() => setSidebarOpen((o) => !o)}
+                  className="sm:hidden p-1 rounded hover:bg-gray-100 text-gray-500 transition-colors"
+                  title="Unscheduled"
+                >
+                  <PanelLeftOpen size={12} />
+                </button>
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
                   disabled={currentPage === 0}
