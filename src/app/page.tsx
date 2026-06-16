@@ -19,12 +19,20 @@ export default async function HomePage() {
             <span className="ml-2 text-xs text-gray-400">Aug 6 – 16, 2026</span>
           </div>
         </div>
-        <Link
-          href="/attractions/new"
-          className="text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors"
-        >
-          + Add Attraction
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/logistics"
+            className="text-xs text-gray-500 hover:text-gray-800 font-medium transition-colors"
+          >
+            Logistics
+          </Link>
+          <Link
+            href="/attractions/new"
+            className="text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors"
+          >
+            + Add Attraction
+          </Link>
+        </div>
       </header>
 
       {!isConfigured && (

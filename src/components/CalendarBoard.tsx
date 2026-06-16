@@ -22,7 +22,7 @@ import {
   DEFAULT_DURATION_MINUTES,
   findTimeConflict,
 } from '@/lib/timeUtils';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '@/lib/supabase';
 import { updateAttraction } from '@/app/actions';
 import DayColumn from './DayColumn';
 import UnscheduledSidebar from './UnscheduledSidebar';
@@ -116,28 +116,26 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
 
   // Realtime: sync changes made by other family members
   useEffect(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !key) return;
+    const client = getSupabaseClient();
+    if (!client) return;
 
-    const supabase = createClient(url, key);
-    const channel = supabase
+    const channel = client
       .channel('attractions-realtime')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'attractions' }, (payload) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'attractions' }, (payload: any) => {
         const row = payload.new as Attraction;
         setAttractions((prev) => prev.find((a) => a.id === row.id) ? prev : [...prev, row]);
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'attractions' }, (payload) => {
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'attractions' }, (payload: any) => {
         const row = payload.new as Attraction;
         setAttractions((prev) => prev.map((a) => a.id === row.id ? row : a));
       })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'attractions' }, (payload) => {
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'attractions' }, (payload: any) => {
         const id = (payload.old as { id: string }).id;
         setAttractions((prev) => prev.filter((a) => a.id !== id));
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => { client.removeChannel(channel); };
   }, []);
 
   const toggleChecked = (id: string) => {

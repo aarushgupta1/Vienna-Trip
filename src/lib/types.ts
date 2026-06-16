@@ -11,3 +11,20 @@ export interface Attraction {
   notes: string | null;
   created_at: string;
 }
+
+export type LogisticsPinCategory =
+  | 'flights'
+  | 'accommodation'
+  | 'transport'
+  | 'documents'
+  | 'contacts'
+  | 'budget'
+  | 'other';
+
+export interface LogisticsPin {
+  id: string;
+  category: LogisticsPinCategory;
+  title: string;
+  content: string;
+  created_at: string;
+}
