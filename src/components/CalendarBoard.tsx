@@ -98,6 +98,7 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
     try { return new Set(JSON.parse(localStorage.getItem('vienna-checked') ?? '[]')); }
     catch { return new Set(); }
   });
+  const [timezone, setTimezone] = useState<'vienna' | 'eastern'>('vienna');
   const [dayNotes, setDayNotes] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem('vienna-day-notes') ?? '{}'); }
     catch { return {}; }
@@ -309,37 +310,61 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
           </div>
 
           <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-            {/* Single header row: nav arrows in time-label cell + day names — ONE border */}
-            <div className="flex border-b border-gray-200 bg-white shrink-0">
-              {/* Nav arrows share the time-label width column */}
-              <div className="w-16 shrink-0 flex flex-row items-center justify-center border-r border-gray-100 gap-0.5">
-                <button
-                  onClick={() => setSidebarOpen((o) => !o)}
-                  className="sm:hidden p-1 rounded hover:bg-gray-100 text-gray-500 transition-colors"
-                  title="Unscheduled"
-                >
-                  <PanelLeftOpen size={12} />
-                </button>
+            {/* Universal nav strip — arrows on top for all screen sizes */}
+            <div className="flex items-center bg-white border-b border-gray-200 px-2 py-1.5 shrink-0">
+              {/* Sidebar toggle — only useful on mobile since sidebar is always visible on desktop */}
+              <button
+                onClick={() => setSidebarOpen((o) => !o)}
+                className="sm:hidden p-2.5 rounded-xl hover:bg-gray-100 active:bg-gray-200 text-gray-500 transition-colors"
+                title="Unscheduled"
+              >
+                <PanelLeftOpen size={20} />
+              </button>
+              <div className="hidden sm:block w-11" />
+
+              {/* Navigation — centered */}
+              <div className="flex-1 flex items-center justify-center gap-1">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
                   disabled={currentPage === 0}
-                  className="p-1 rounded hover:bg-gray-100 disabled:opacity-25 text-gray-500 transition-colors"
+                  className="p-2.5 rounded-xl hover:bg-gray-100 active:bg-gray-200 disabled:opacity-25 text-gray-600 transition-colors"
                   title="Previous"
                 >
-                  <ChevronLeft size={12} />
+                  <ChevronLeft size={24} />
                 </button>
-                <span className="text-[9px] text-gray-400 font-medium tabular-nums">
-                  {currentPage + 1}/{totalPages}
+                <span className="text-sm font-semibold text-gray-600 tabular-nums min-w-[3.5rem] text-center">
+                  {currentPage + 1} / {totalPages}
                 </span>
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
                   disabled={currentPage === totalPages - 1}
-                  className="p-1 rounded hover:bg-gray-100 disabled:opacity-25 text-gray-500 transition-colors"
+                  className="p-2.5 rounded-xl hover:bg-gray-100 active:bg-gray-200 disabled:opacity-25 text-gray-600 transition-colors"
                   title="Next"
                 >
-                  <ChevronRight size={12} />
+                  <ChevronRight size={24} />
                 </button>
               </div>
+
+              {/* Timezone toggle */}
+              <div className="flex rounded-lg border border-gray-200 overflow-hidden text-[11px] font-semibold">
+                <button
+                  onClick={() => setTimezone('vienna')}
+                  className={timezone === 'vienna' ? 'px-2.5 py-1.5 bg-blue-500 text-white' : 'px-2.5 py-1.5 text-gray-500 hover:bg-gray-50 transition-colors'}
+                >
+                  VIE
+                </button>
+                <button
+                  onClick={() => setTimezone('eastern')}
+                  className={timezone === 'eastern' ? 'px-2.5 py-1.5 bg-blue-500 text-white' : 'px-2.5 py-1.5 text-gray-500 hover:bg-gray-50 transition-colors'}
+                >
+                  ET
+                </button>
+              </div>
+            </div>
+
+            {/* Header row: time-label spacer + day names */}
+            <div className="flex border-b border-gray-200 bg-white shrink-0">
+              <div className="w-16 shrink-0 border-r border-gray-100" />
 
               {visibleDates.map((date) => (
                 <DayHeader
@@ -354,7 +379,7 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
 
             {/* Anytime-zone spacer in time-label column + scrollable grid */}
             <div ref={scrollRef} className="flex flex-1 overflow-y-auto overflow-x-hidden">
-              <TimeLabels />
+              <TimeLabels timezone={timezone} />
               {visibleDates.map((date) => (
                 <DayColumn
                   key={date}

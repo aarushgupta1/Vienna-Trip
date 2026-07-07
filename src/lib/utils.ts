@@ -80,6 +80,23 @@ export function formatDateFull(dateStr: string): string {
   });
 }
 
+export function buildGCalUrl(name: string, date: string, startTime: string, endTime: string, description: string): string {
+  const d = date.replace(/-/g, '');
+  let dates: string;
+  if (startTime) {
+    const start = `${d}T${startTime.replace(':', '')}00`;
+    const end = endTime ? `${d}T${endTime.replace(':', '')}00` : start;
+    dates = `${start}/${end}`;
+  } else {
+    const nextDay = new Date(date + 'T12:00:00Z');
+    nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+    dates = `${d}/${nextDay.toISOString().slice(0, 10).replace(/-/g, '')}`;
+  }
+  const params = new URLSearchParams({ action: 'TEMPLATE', text: name, dates, location: 'Vienna, Austria', ctz: 'Europe/Vienna' });
+  if (description) params.set('details', description);
+  return `https://calendar.google.com/calendar/render?${params}`;
+}
+
 export function formatTime(timeStr: string): string {
   const [hours, minutes] = timeStr.split(':').map(Number);
   const ampm = hours >= 12 ? 'PM' : 'AM';

@@ -2,10 +2,10 @@
 
 import { useState, useTransition } from 'react';
 import { Attraction, Category } from '@/lib/types';
-import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull } from '@/lib/utils';
+import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull, buildGCalUrl } from '@/lib/utils';
 import { updateAttraction, deleteAttraction } from '@/app/actions';
 import { findTimeConflict } from '@/lib/timeUtils';
-import { X, Trash2 } from 'lucide-react';
+import { X, Trash2, CalendarPlus } from 'lucide-react';
 
 interface EditModalProps {
   attraction: Attraction;
@@ -230,6 +230,17 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
               {isPending ? 'Saving…' : 'Save Changes'}
             </button>
           </div>
+          {form.scheduled_date && (
+            <a
+              href={buildGCalUrl(form.name || attraction.name, form.scheduled_date, form.start_time, form.end_time, form.description)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center justify-center gap-2 px-4 py-2.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded-xl text-sm font-medium transition-colors"
+            >
+              <CalendarPlus size={14} />
+              Add to Google Calendar
+            </a>
+          )}
           <button
             onClick={handleDelete}
             disabled={isDeleting || isPending}
