@@ -169,7 +169,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
 
           {/* Times */}
           <div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-5">
               <div>
                 <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
                   Start time
