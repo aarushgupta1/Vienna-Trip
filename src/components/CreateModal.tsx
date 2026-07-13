@@ -5,6 +5,7 @@ import { Attraction, Category } from '@/lib/types';
 import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull } from '@/lib/utils';
 import { createAttractionObject } from '@/app/actions';
 import { minutesToTime, timeToMinutes, DEFAULT_DURATION_MINUTES, findTimeConflict } from '@/lib/timeUtils';
+import LocationAutocomplete from './LocationAutocomplete';
 import { X } from 'lucide-react';
 
 interface CreateModalProps {
@@ -146,10 +147,9 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
             <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
               Location
             </label>
-            <input
-              type="text"
+            <LocationAutocomplete
               value={form.location}
-              onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+              onChange={(v) => setForm((f) => ({ ...f, location: v }))}
               className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300 dark:placeholder-gray-600"
               placeholder="Address or place name — enables walking/transit times"
             />

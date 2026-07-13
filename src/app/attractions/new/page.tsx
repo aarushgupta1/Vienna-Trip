@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createAttraction } from '@/app/actions';
 import { generateTripDates, formatDateFull, CATEGORY_LABELS, CATEGORY_ICONS } from '@/lib/utils';
 import { Category } from '@/lib/types';
+import LocationAutocomplete from '@/components/LocationAutocomplete';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
@@ -84,9 +85,9 @@ export default function NewAttractionPage() {
               <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
                 Location
               </label>
-              <input
+              <LocationAutocomplete
                 name="location"
-                type="text"
+                defaultValue=""
                 placeholder="Address or place name — enables walking/transit times"
                 className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600"
               />

@@ -3,7 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { Attraction, Category } from '@/lib/types';
-import { geocodeAddress } from '@/lib/geocode';
+import { geocodeAddress, searchLocations as searchLocationsGeo, GeocodeSuggestion } from '@/lib/geocode';
 
 function getSupabase() {
   return createClient(
@@ -97,6 +97,10 @@ export async function updateAttraction(
   const { error } = await getSupabase().from('attractions').update(patch).eq('id', id);
   if (error) throw new Error(error.message);
   revalidatePath('/');
+}
+
+export async function searchLocations(query: string): Promise<GeocodeSuggestion[]> {
+  return searchLocationsGeo(query);
 }
 
 export async function deleteAttraction(id: string): Promise<void> {
