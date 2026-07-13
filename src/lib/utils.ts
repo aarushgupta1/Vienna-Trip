@@ -15,31 +15,31 @@ export function generateTripDates(): string[] {
 
 export const CATEGORY_COLORS: Record<Category, { bg: string; text: string; border: string; dot: string }> = {
   museum: {
-    bg: 'bg-blue-50 dark:bg-blue-950/40',
+    bg: 'bg-blue-50 dark:bg-blue-950',
     text: 'text-blue-700 dark:text-blue-300',
     border: 'border-blue-200 dark:border-blue-800',
     dot: 'bg-blue-400',
   },
   food: {
-    bg: 'bg-orange-50 dark:bg-orange-950/40',
+    bg: 'bg-orange-50 dark:bg-orange-950',
     text: 'text-orange-700 dark:text-orange-300',
     border: 'border-orange-200 dark:border-orange-800',
     dot: 'bg-orange-400',
   },
   landmark: {
-    bg: 'bg-emerald-50 dark:bg-emerald-950/40',
+    bg: 'bg-emerald-50 dark:bg-emerald-950',
     text: 'text-emerald-700 dark:text-emerald-300',
     border: 'border-emerald-200 dark:border-emerald-800',
     dot: 'bg-emerald-400',
   },
   entertainment: {
-    bg: 'bg-purple-50 dark:bg-purple-950/40',
+    bg: 'bg-purple-50 dark:bg-purple-950',
     text: 'text-purple-700 dark:text-purple-300',
     border: 'border-purple-200 dark:border-purple-800',
     dot: 'bg-purple-400',
   },
   other: {
-    bg: 'bg-gray-50 dark:bg-gray-800/40',
+    bg: 'bg-gray-50 dark:bg-gray-800',
     text: 'text-gray-600 dark:text-gray-300',
     border: 'border-gray-200 dark:border-gray-700',
     dot: 'bg-gray-400',

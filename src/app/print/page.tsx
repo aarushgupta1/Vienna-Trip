@@ -115,44 +115,10 @@ export default async function PrintPage() {
           <p className="text-sm text-gray-500 mt-0.5">August 6 – 16, 2026 &nbsp;·&nbsp; Family Itinerary</p>
         </div>
 
-        {/* Days */}
-        <div className="space-y-8">
-          {byDate.map(({ date, events }) => (
-            <div key={date} className="break-inside-avoid">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
-                {formatDateFull(date)}
-              </h2>
-              {events.length === 0 ? (
-                <p className="text-sm text-gray-300 italic pl-32">Nothing scheduled</p>
-              ) : (
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  {events.map((a) => (
-                    <EventRow key={a.id} attraction={a} />
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Unscheduled */}
-        {unscheduled.length > 0 && (
-          <div className="mt-10 pt-6 border-t-2 border-gray-200 break-inside-avoid">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
-              Ideas / Unscheduled
-            </h2>
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
-              {unscheduled.map((a) => (
-                <EventRow key={a.id} attraction={a} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Logistics */}
+        {/* Logistics — comes first, clearly separated from the day-by-day schedule below */}
         {pinsByCategory.length > 0 && (
-          <div className="mt-10 pt-6 border-t-2 border-gray-200 break-inside-avoid print:break-before-page">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">
+          <div className="mb-10 pb-8 break-inside-avoid">
+            <h2 className="text-lg font-bold text-gray-900 tracking-tight mb-4 pb-2 border-b-2 border-gray-900">
               Logistics
             </h2>
             <div className="space-y-6">
@@ -171,6 +137,46 @@ export default async function PrintPage() {
             </div>
           </div>
         )}
+
+        {/* Itinerary — starts on its own printed page when Logistics is present above it */}
+        <div className={pinsByCategory.length > 0 ? 'print:break-before-page' : undefined}>
+          <h2 className="text-lg font-bold text-gray-900 tracking-tight mb-4 pb-2 border-b-2 border-gray-900">
+            Itinerary
+          </h2>
+
+          <div className="space-y-8">
+            {byDate.map(({ date, events }) => (
+              <div key={date} className="break-inside-avoid">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+                  {formatDateFull(date)}
+                </h3>
+                {events.length === 0 ? (
+                  <p className="text-sm text-gray-300 italic pl-32">Nothing scheduled</p>
+                ) : (
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    {events.map((a) => (
+                      <EventRow key={a.id} attraction={a} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Unscheduled */}
+          {unscheduled.length > 0 && (
+            <div className="mt-10 pt-6 border-t-2 border-gray-200 break-inside-avoid">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+                Ideas / Unscheduled
+              </h3>
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                {unscheduled.map((a) => (
+                  <EventRow key={a.id} attraction={a} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
