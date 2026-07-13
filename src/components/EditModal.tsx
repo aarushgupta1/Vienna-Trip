@@ -24,6 +24,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
     start_time: attraction.start_time ?? '',
     end_time: attraction.end_time ?? '',
     notes: attraction.notes ?? '',
+    location: attraction.location ?? '',
   });
   const [isPending, startTransition] = useTransition();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -55,7 +56,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
     }
     setConflictError(null);
     startTransition(async () => {
-      const patch = {
+      const patch: Partial<Attraction> = {
         name: form.name.trim(),
         description: form.description || null,
         category: form.category as Category,
@@ -64,6 +65,12 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
         end_time: form.end_time || null,
         notes: form.notes || null,
       };
+      // Only send location when it actually changed, so the server doesn't
+      // re-geocode on every save (e.g. just moving the time).
+      const trimmedLocation = form.location.trim() || null;
+      if (trimmedLocation !== attraction.location) {
+        patch.location = trimmedLocation;
+      }
       await updateAttraction(attraction.id, patch);
       onSaved({ ...attraction, ...patch });
     });
@@ -145,6 +152,20 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
               rows={2}
               className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300 dark:placeholder-gray-600"
               placeholder="Brief description..."
+            />
+          </div>
+
+          {/* Location */}
+          <div>
+            <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+              Location
+            </label>
+            <input
+              type="text"
+              value={form.location}
+              onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300 dark:placeholder-gray-600"
+              placeholder="Address or place name — enables walking/transit times"
             />
           </div>
 

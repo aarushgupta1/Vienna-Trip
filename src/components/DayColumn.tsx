@@ -15,7 +15,36 @@ import {
   timeToMinutes,
   minutesToTime,
 } from '@/lib/timeUtils';
+import { TravelSegment, TravelMode, segmentMinutes, formatDistance, isEstimatedMode } from '@/lib/travel';
 import AttractionBlock from './AttractionBlock';
+
+const TRAVEL_MODE_ICON: Record<TravelMode, string> = {
+  walk: '🚶',
+  bus: '🚌',
+  drive: '🚗',
+  train: '🚆',
+};
+
+const MIN_GAP_PX = 24; // below this the gap is too tight to fit a badge without overlapping events
+
+function TravelBadge({ top, height, segment, mode }: { top: number; height: number; segment: TravelSegment; mode: TravelMode }) {
+  const minutes = segmentMinutes(segment, mode);
+  const estimated = isEstimatedMode(mode);
+  return (
+    <div
+      className="absolute left-1 right-1 flex items-center justify-center pointer-events-none z-0"
+      style={{ top, height }}
+      title={estimated ? 'Estimated from typical travel speeds' : 'Estimated driving time (real route)'}
+    >
+      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-[9px] font-medium whitespace-nowrap">
+        <span>{TRAVEL_MODE_ICON[mode]}</span>
+        <span>{formatDistance(segment.distanceMeters)}</span>
+        <span className="text-gray-300 dark:text-gray-600">·</span>
+        <span>{estimated && '~'}{minutes != null ? `${minutes} min` : '—'}</span>
+      </div>
+    </div>
+  );
+}
 
 function TimeSlot({ id, top }: { id: string; top: number }) {
   const { setNodeRef, isOver } = useDroppable({ id });
@@ -37,10 +66,14 @@ interface DayColumnProps {
   checkMode: boolean;
   checkedIds: Set<string>;
   onToggleCheck: (id: string) => void;
+  travelSegments: Record<string, TravelSegment>;
+  travelMode: TravelMode;
 }
 
-export default function DayColumn({ date, attractions, onAttractionClick, onTimeSlotClick, onAttractionResize, checkMode, checkedIds, onToggleCheck }: DayColumnProps) {
-  const timedAttractions = attractions.filter((a) => a.start_time);
+export default function DayColumn({ date, attractions, onAttractionClick, onTimeSlotClick, onAttractionResize, checkMode, checkedIds, onToggleCheck, travelSegments, travelMode }: DayColumnProps) {
+  const timedAttractions = attractions
+    .filter((a) => a.start_time)
+    .sort((a, b) => a.start_time!.localeCompare(b.start_time!));
   const timeSlots = generateTimeSlots(date);
   const gridHeight = (GRID_END_HOUR - GRID_START_HOUR) * PIXELS_PER_HOUR;
   const [localHeights, setLocalHeights] = useState<Record<string, number>>({});
@@ -128,6 +161,20 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
               )}
             </div>
           );
+        })}
+
+        {timedAttractions.slice(0, -1).map((a, i) => {
+          const b = timedAttractions[i + 1];
+          const segment = travelSegments[`${a.id}->${b.id}`];
+          if (!segment) return null;
+
+          const aHeight = localHeights[a.id] ?? getEventHeight(a.start_time!, a.end_time);
+          const prevBottom = getEventTop(a.start_time!) + aHeight;
+          const nextTop = getEventTop(b.start_time!);
+          const gap = nextTop - prevBottom;
+          if (gap < MIN_GAP_PX) return null;
+
+          return <TravelBadge key={`${a.id}-${b.id}`} top={prevBottom} height={gap} segment={segment} mode={travelMode} />;
         })}
       </div>
     </div>

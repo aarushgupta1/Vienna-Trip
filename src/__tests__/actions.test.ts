@@ -43,6 +43,9 @@ const SAMPLE: Attraction = {
   start_time: '10:00',
   end_time: '12:00',
   notes: null,
+  location: null,
+  lat: null,
+  lng: null,
   created_at: '2026-01-01T00:00:00Z',
 };
 
@@ -98,6 +101,7 @@ describe('createAttractionObject', () => {
       start_time: SAMPLE.start_time,
       end_time: SAMPLE.end_time,
       notes: SAMPLE.notes,
+      location: SAMPLE.location,
     });
     expect(result).toEqual(SAMPLE);
   });
@@ -114,6 +118,7 @@ describe('createAttractionObject', () => {
         start_time: null,
         end_time: null,
         notes: null,
+        location: null,
       })
     ).rejects.toThrow('unique constraint violated');
   });

@@ -1,6 +1,9 @@
 import { getAttractions } from './actions';
 import CalendarBoard from '@/components/CalendarBoardClient';
 import ThemeToggle from '@/components/ThemeToggle';
+import { generateTripDates } from '@/lib/utils';
+import { getWeatherForDates } from '@/lib/weather';
+import { getTravelSegments } from '@/lib/travel';
 import Link from 'next/link';
 import { MapPin, AlertTriangle } from 'lucide-react';
 
@@ -9,6 +12,8 @@ export default async function HomePage() {
     !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   const attractions = await getAttractions();
+  const weather = await getWeatherForDates(generateTripDates());
+  const travelSegments = await getTravelSegments(attractions);
 
   return (
     <main className="h-dvh flex flex-col bg-gray-50 dark:bg-gray-950">
@@ -54,7 +59,7 @@ export default async function HomePage() {
       )}
 
       <div className="flex-1 overflow-hidden">
-        <CalendarBoard initialAttractions={attractions} />
+        <CalendarBoard initialAttractions={attractions} weather={weather} travelSegments={travelSegments} />
       </div>
     </main>
   );

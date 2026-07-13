@@ -10,8 +10,17 @@ create table if not exists attractions (
   start_time   time,
   end_time     time,
   notes        text,
+  location     text,
+  lat          double precision,
+  lng          double precision,
   created_at   timestamptz default now()
 );
+
+-- Safe to re-run on an existing table: adds the location/travel-time columns
+-- (geocoded from the "location" address text) if they aren't there yet.
+alter table attractions add column if not exists location text;
+alter table attractions add column if not exists lat double precision;
+alter table attractions add column if not exists lng double precision;
 
 -- Enable Row Level Security
 alter table attractions enable row level security;

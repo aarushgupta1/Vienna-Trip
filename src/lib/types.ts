@@ -9,6 +9,9 @@ export interface Attraction {
   start_time: string | null; // HH:MM
   end_time: string | null; // HH:MM
   notes: string | null;
+  location: string | null; // free-text address, geocoded server-side into lat/lng
+  lat: number | null;
+  lng: number | null;
   created_at: string;
 }
 

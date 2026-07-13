@@ -25,6 +25,9 @@ function makeAttraction(overrides: Partial<Attraction> = {}): Attraction {
     start_time: '10:00',
     end_time: '11:00',
     notes: null,
+    location: null,
+    lat: null,
+    lng: null,
     created_at: '2026-01-01T00:00:00Z',
     ...overrides,
   };

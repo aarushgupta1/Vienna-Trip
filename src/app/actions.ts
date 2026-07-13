@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { Attraction, Category } from '@/lib/types';
+import { geocodeAddress } from '@/lib/geocode';
 
 function getSupabase() {
   return createClient(
@@ -26,6 +27,9 @@ export async function getAttractions(): Promise<Attraction[]> {
 }
 
 export async function createAttraction(formData: FormData): Promise<void> {
+  const location = (formData.get('location') as string) || null;
+  const geo = location ? await geocodeAddress(location) : null;
+
   const { error } = await getSupabase().from('attractions').insert({
     name: formData.get('name') as string,
     description: (formData.get('description') as string) || null,
@@ -34,6 +38,9 @@ export async function createAttraction(formData: FormData): Promise<void> {
     start_time: (formData.get('start_time') as string) || null,
     end_time: (formData.get('end_time') as string) || null,
     scheduled_date: (formData.get('scheduled_date') as string) || null,
+    location,
+    lat: geo?.lat ?? null,
+    lng: geo?.lng ?? null,
   });
 
   if (error) throw new Error(error.message);
@@ -48,10 +55,13 @@ export async function createAttractionObject(data: {
   start_time: string | null;
   end_time: string | null;
   notes: string | null;
+  location: string | null;
 }): Promise<Attraction> {
+  const geo = data.location ? await geocodeAddress(data.location) : null;
+
   const { data: row, error } = await getSupabase()
     .from('attractions')
-    .insert(data)
+    .insert({ ...data, lat: geo?.lat ?? null, lng: geo?.lng ?? null })
     .select()
     .single();
   if (error) throw new Error(error.message);
@@ -71,9 +81,20 @@ export async function scheduleAttraction(id: string, scheduledDate: string | nul
 
 export async function updateAttraction(
   id: string,
-  data: Partial<Pick<Attraction, 'name' | 'description' | 'category' | 'scheduled_date' | 'start_time' | 'end_time' | 'notes'>>
+  data: Partial<Pick<Attraction, 'name' | 'description' | 'category' | 'scheduled_date' | 'start_time' | 'end_time' | 'notes' | 'location'>>
 ): Promise<void> {
-  const { error } = await getSupabase().from('attractions').update(data).eq('id', id);
+  // Callers only pass `location` when it actually changed, so re-geocoding
+  // here doesn't fire on every unrelated edit (e.g. just moving the time).
+  const patch: Record<string, unknown> = { ...data };
+  if ('location' in patch) {
+    const location = (patch.location as string | null) || null;
+    const geo = location ? await geocodeAddress(location) : null;
+    patch.location = location;
+    patch.lat = geo?.lat ?? null;
+    patch.lng = geo?.lng ?? null;
+  }
+
+  const { error } = await getSupabase().from('attractions').update(patch).eq('id', id);
   if (error) throw new Error(error.message);
   revalidatePath('/');
 }

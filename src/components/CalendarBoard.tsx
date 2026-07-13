@@ -13,6 +13,8 @@ import {
 import { useState, useTransition, useEffect, useRef } from 'react';
 import { Attraction } from '@/lib/types';
 import { generateTripDates, formatDate } from '@/lib/utils';
+import { DayWeather, weatherCodeInfo } from '@/lib/weather';
+import { TravelSegment, TravelMode } from '@/lib/travel';
 import {
   DAYS_PER_PAGE,
   getDuration,
@@ -30,12 +32,12 @@ import AttractionBlock from './AttractionBlock';
 import EditModal from './EditModal';
 import CreateModal from './CreateModal';
 import TimeLabels from './TimeLabels';
-import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, Footprints, Bus, Car, TrainFront } from 'lucide-react';
 
 function DayHeader({
-  date, count, note, onNoteChange,
+  date, count, note, onNoteChange, weather,
 }: {
-  date: string; count: number; note: string; onNoteChange: (v: string) => void;
+  date: string; count: number; note: string; onNoteChange: (v: string) => void; weather?: DayWeather;
 }) {
   const { weekday, monthDay } = formatDate(date);
   const [editing, setEditing] = useState(false);
@@ -45,6 +47,20 @@ function DayHeader({
       <div className="text-center pt-2 pb-1 px-1">
         <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">{weekday}</div>
         <div className="text-sm font-bold leading-snug text-gray-800 dark:text-gray-200">{monthDay}</div>
+        {weather && (() => {
+          const { icon, label } = weatherCodeInfo(weather.code);
+          return (
+            <div
+              className="flex items-center justify-center gap-1 text-[10px] text-gray-500 dark:text-gray-400 mt-0.5"
+              title={`${label}${weather.isForecast ? '' : ' (average)'} — Vienna`}
+            >
+              <span>{icon}</span>
+              <span className="font-medium">{weather.high}°</span>
+              <span className="text-gray-300 dark:text-gray-600">/{weather.low}°</span>
+              {!weather.isForecast && <span className="text-gray-300 dark:text-gray-600">~</span>}
+            </div>
+          );
+        })()}
         {count > 0 && (
           <div className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">
             {count} event{count !== 1 ? 's' : ''}
@@ -81,7 +97,15 @@ function DayHeader({
   );
 }
 
-export default function CalendarBoard({ initialAttractions }: { initialAttractions: Attraction[] }) {
+export default function CalendarBoard({
+  initialAttractions,
+  weather,
+  travelSegments,
+}: {
+  initialAttractions: Attraction[];
+  weather: Record<string, DayWeather>;
+  travelSegments: Record<string, TravelSegment>;
+}) {
   const [attractions, setAttractions] = useState(initialAttractions);
   const [activeAttraction, setActiveAttraction] = useState<Attraction | null>(null);
   const [editingAttraction, setEditingAttraction] = useState<Attraction | null>(null);
@@ -95,6 +119,7 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [timezone, setTimezone] = useState<'vienna' | 'eastern'>('vienna');
+  const [travelMode, setTravelMode] = useState<TravelMode>('walk');
   const [dayNotes, setDayNotes] = useState<Record<string, string>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const [, startTransition] = useTransition();
@@ -368,6 +393,31 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
                   ET
                 </button>
               </div>
+
+              {/* Travel mode toggle — controls how the times between events are estimated */}
+              <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden ml-1.5">
+                {(
+                  [
+                    ['walk', Footprints, 'Walking'],
+                    ['bus', Bus, 'Bus'],
+                    ['drive', Car, 'Driving'],
+                    ['train', TrainFront, 'Train'],
+                  ] as const
+                ).map(([mode, Icon, label]) => (
+                  <button
+                    key={mode}
+                    onClick={() => setTravelMode(mode)}
+                    title={label}
+                    className={
+                      travelMode === mode
+                        ? 'px-2 py-1.5 bg-blue-500 text-white'
+                        : 'px-2 py-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors'
+                    }
+                  >
+                    <Icon size={13} />
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Header row: time-label spacer + day names */}
@@ -380,6 +430,7 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
                   date={date}
                   count={scheduledByDate[date]?.length ?? 0}
                   note={dayNotes[date] ?? ''}
+                  weather={weather[date]}
                   onNoteChange={(v) => updateDayNote(date, v)}
                 />
               ))}
@@ -399,6 +450,8 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
                   checkMode={true}
                   checkedIds={checkedIds}
                   onToggleCheck={toggleChecked}
+                  travelSegments={travelSegments}
+                  travelMode={travelMode}
                 />
               ))}
             </div>

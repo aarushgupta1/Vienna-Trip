@@ -26,6 +26,7 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
     start_time: startTime,
     end_time: defaultEndTime,
     notes: '',
+    location: '',
   });
   const [isPending, startTransition] = useTransition();
   const [conflictError, setConflictError] = useState<string | null>(null);
@@ -52,6 +53,7 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
         start_time: form.start_time || null,
         end_time: form.end_time || null,
         notes: form.notes || null,
+        location: form.location.trim() || null,
       });
       onCreated(attraction);
     });
@@ -136,6 +138,20 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
               rows={2}
               className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300 dark:placeholder-gray-600"
               placeholder="Brief description..."
+            />
+          </div>
+
+          {/* Location */}
+          <div>
+            <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+              Location
+            </label>
+            <input
+              type="text"
+              value={form.location}
+              onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300 dark:placeholder-gray-600"
+              placeholder="Address or place name — enables walking/transit times"
             />
           </div>
 
