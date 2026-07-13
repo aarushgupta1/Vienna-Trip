@@ -89,22 +89,20 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
   const [createSlot, setCreateSlot] = useState<{ date: string; time: string } | null>(null);
   const [colWidth, setColWidth] = useState(200);
   const [conflictMsg, setConflictMsg] = useState<string | null>(null);
-  const [daysPerPage, setDaysPerPage] = useState(() => {
-    const w = window.innerWidth;
-    return w < 640 ? 1 : w < 1024 ? 2 : DAYS_PER_PAGE;
-  });
-  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 640);
-  const [checkedIds, setCheckedIds] = useState<Set<string>>(() => {
-    try { return new Set(JSON.parse(localStorage.getItem('vienna-checked') ?? '[]')); }
-    catch { return new Set(); }
-  });
+  // Defaults assume desktop; the resize effect below corrects for the
+  // actual viewport right after mount so this can render on the server.
+  const [daysPerPage, setDaysPerPage] = useState(DAYS_PER_PAGE);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [timezone, setTimezone] = useState<'vienna' | 'eastern'>('vienna');
-  const [dayNotes, setDayNotes] = useState<Record<string, string>>(() => {
-    try { return JSON.parse(localStorage.getItem('vienna-day-notes') ?? '{}'); }
-    catch { return {}; }
-  });
+  const [dayNotes, setDayNotes] = useState<Record<string, string>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const [, startTransition] = useTransition();
+
+  useEffect(() => {
+    try { setCheckedIds(new Set(JSON.parse(localStorage.getItem('vienna-checked') ?? '[]'))); } catch {}
+    try { setDayNotes(JSON.parse(localStorage.getItem('vienna-day-notes') ?? '{}')); } catch {}
+  }, []);
 
   useEffect(() => {
     const update = () => {
@@ -267,6 +265,15 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
     });
   };
 
+  const handleAttractionResize = (id: string, newEndTime: string) => {
+    setAttractions((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, end_time: newEndTime } : a))
+    );
+    startTransition(() => {
+      updateAttraction(id, { end_time: newEndTime });
+    });
+  };
+
   const handleAttractionDeleted = (id: string) => {
     setAttractions((prev) => prev.filter((a) => a.id !== id));
     if (editingAttraction?.id === id) setEditingAttraction(null);
@@ -283,6 +290,7 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
   return (
     <>
       <DndContext
+        id="calendar-board-dnd"
         sensors={sensors}
         collisionDetection={pointerWithin}
         onDragStart={handleDragStart}
@@ -387,6 +395,7 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
                   attractions={scheduledByDate[date] ?? []}
                   onAttractionClick={setEditingAttraction}
                   onTimeSlotClick={(d, t) => setCreateSlot({ date: d, time: t })}
+                  onAttractionResize={handleAttractionResize}
                   checkMode={true}
                   checkedIds={checkedIds}
                   onToggleCheck={toggleChecked}
