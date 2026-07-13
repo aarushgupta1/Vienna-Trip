@@ -62,14 +62,14 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
-          <h2 className="font-bold text-gray-900">{isEditing ? 'Edit Pin' : 'New Pin'}</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 rounded-t-2xl">
+          <h2 className="font-bold text-gray-900 dark:text-gray-100">{isEditing ? 'Edit Pin' : 'New Pin'}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-700 transition-colors rounded-full p-1 hover:bg-gray-100"
+            className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             <X size={17} />
           </button>
@@ -78,7 +78,7 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
         <div className="px-6 py-5 space-y-4">
           {/* Category */}
           <div>
-            <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
               Category
             </label>
             <div className="grid grid-cols-2 gap-1.5">
@@ -91,7 +91,7 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
                       'flex items-center gap-2 px-3 py-2 border rounded-xl cursor-pointer text-xs font-medium transition-colors',
                       form.category === cat
                         ? `${meta.bg} ${meta.border} ${meta.text}`
-                        : 'border-gray-200 hover:bg-gray-50 text-gray-600',
+                        : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300',
                     ].join(' ')}
                   >
                     <input
@@ -111,7 +111,7 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
 
           {/* Title */}
           <div>
-            <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
               Title
             </label>
             <input
@@ -119,13 +119,13 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               placeholder="e.g. Vienna Airport → Hotel transfer"
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300"
+              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300 dark:placeholder-gray-600"
             />
           </div>
 
           {/* Content */}
           <div>
-            <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
               Details
             </label>
             <textarea
@@ -133,7 +133,7 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
               onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
               rows={5}
               placeholder="Flight numbers, confirmation codes, addresses, links…"
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300"
+              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300 dark:placeholder-gray-600"
             />
           </div>
         </div>
@@ -142,7 +142,7 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               Cancel
             </button>
@@ -158,7 +158,7 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
             <button
               onClick={handleDelete}
               disabled={isDeleting || isPending}
-              className="flex w-full items-center justify-center gap-2 px-4 py-2 text-red-500 hover:bg-red-50 hover:text-red-700 rounded-xl text-sm font-medium transition-colors disabled:opacity-40"
+              className="flex w-full items-center justify-center gap-2 px-4 py-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-700 dark:hover:text-red-300 rounded-xl text-sm font-medium transition-colors disabled:opacity-40"
             >
               <Trash2 size={14} />
               {isDeleting ? 'Deleting…' : 'Delete pin'}

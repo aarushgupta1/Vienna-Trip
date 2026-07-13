@@ -41,12 +41,12 @@ function DayHeader({
   const [editing, setEditing] = useState(false);
 
   return (
-    <div className="flex-1 border-l border-gray-100 first:border-l-0 flex flex-col">
+    <div className="flex-1 border-l border-gray-100 dark:border-gray-800 first:border-l-0 flex flex-col">
       <div className="text-center pt-2 pb-1 px-1">
-        <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{weekday}</div>
-        <div className="text-sm font-bold leading-snug text-gray-800">{monthDay}</div>
+        <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">{weekday}</div>
+        <div className="text-sm font-bold leading-snug text-gray-800 dark:text-gray-200">{monthDay}</div>
         {count > 0 && (
-          <div className="text-[9px] text-gray-400 mt-0.5">
+          <div className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">
             {count} event{count !== 1 ? 's' : ''}
           </div>
         )}
@@ -60,17 +60,17 @@ function DayHeader({
             onBlur={() => setEditing(false)}
             rows={2}
             placeholder="Notes for this day…"
-            className="w-full text-[9px] text-gray-600 bg-white border border-blue-200 rounded px-1.5 py-1 outline-none resize-none leading-tight placeholder-gray-300 shadow-sm"
+            className="w-full text-[9px] text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-800 rounded px-1.5 py-1 outline-none resize-none leading-tight placeholder-gray-300 dark:placeholder-gray-600 shadow-sm"
           />
         ) : (
           <button
             onClick={() => setEditing(true)}
-            className="group w-full text-left text-[9px] leading-tight rounded px-1.5 py-0.5 hover:bg-gray-100 transition-colors"
+            className="group w-full text-left text-[9px] leading-tight rounded px-1.5 py-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             {note && (
-              <span className="text-gray-500 whitespace-pre-wrap block mb-0.5">{note}</span>
+              <span className="text-gray-500 dark:text-gray-400 whitespace-pre-wrap block mb-0.5">{note}</span>
             )}
-            <span className="flex items-center gap-1 text-gray-300 italic group-hover:text-gray-400 transition-colors">
+            <span className="flex items-center gap-1 text-gray-300 dark:text-gray-600 italic group-hover:text-gray-400 dark:group-hover:text-gray-500 transition-colors">
               <Pencil size={8} />
               + day notes
             </span>
@@ -296,7 +296,7 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex h-full overflow-hidden bg-white relative">
+        <div className="flex h-full overflow-hidden bg-white dark:bg-gray-900 relative">
           {/* Backdrop for mobile sidebar */}
           {sidebarOpen && (
             <div
@@ -319,11 +319,11 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
 
           <div className="flex-1 flex flex-col overflow-hidden min-w-0">
             {/* Universal nav strip — arrows on top for all screen sizes */}
-            <div className="flex items-center bg-white border-b border-gray-200 px-2 py-1.5 shrink-0">
+            <div className="flex items-center bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-2 py-1.5 shrink-0">
               {/* Sidebar toggle — only useful on mobile since sidebar is always visible on desktop */}
               <button
                 onClick={() => setSidebarOpen((o) => !o)}
-                className="sm:hidden p-2.5 rounded-xl hover:bg-gray-100 active:bg-gray-200 text-gray-500 transition-colors"
+                className="sm:hidden p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors"
                 title="Unscheduled"
               >
                 <PanelLeftOpen size={20} />
@@ -335,18 +335,18 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
                   disabled={currentPage === 0}
-                  className="p-2.5 rounded-xl hover:bg-gray-100 active:bg-gray-200 disabled:opacity-25 text-gray-600 transition-colors"
+                  className="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 disabled:opacity-25 text-gray-600 dark:text-gray-300 transition-colors"
                   title="Previous"
                 >
                   <ChevronLeft size={24} />
                 </button>
-                <span className="text-sm font-semibold text-gray-600 tabular-nums min-w-[3.5rem] text-center">
+                <span className="text-sm font-semibold text-gray-600 dark:text-gray-300 tabular-nums min-w-[3.5rem] text-center">
                   {currentPage + 1} / {totalPages}
                 </span>
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
                   disabled={currentPage === totalPages - 1}
-                  className="p-2.5 rounded-xl hover:bg-gray-100 active:bg-gray-200 disabled:opacity-25 text-gray-600 transition-colors"
+                  className="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 disabled:opacity-25 text-gray-600 dark:text-gray-300 transition-colors"
                   title="Next"
                 >
                   <ChevronRight size={24} />
@@ -354,16 +354,16 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
               </div>
 
               {/* Timezone toggle */}
-              <div className="flex rounded-lg border border-gray-200 overflow-hidden text-[11px] font-semibold">
+              <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-[11px] font-semibold">
                 <button
                   onClick={() => setTimezone('vienna')}
-                  className={timezone === 'vienna' ? 'px-2.5 py-1.5 bg-blue-500 text-white' : 'px-2.5 py-1.5 text-gray-500 hover:bg-gray-50 transition-colors'}
+                  className={timezone === 'vienna' ? 'px-2.5 py-1.5 bg-blue-500 text-white' : 'px-2.5 py-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors'}
                 >
                   VIE
                 </button>
                 <button
                   onClick={() => setTimezone('eastern')}
-                  className={timezone === 'eastern' ? 'px-2.5 py-1.5 bg-blue-500 text-white' : 'px-2.5 py-1.5 text-gray-500 hover:bg-gray-50 transition-colors'}
+                  className={timezone === 'eastern' ? 'px-2.5 py-1.5 bg-blue-500 text-white' : 'px-2.5 py-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors'}
                 >
                   ET
                 </button>
@@ -371,8 +371,8 @@ export default function CalendarBoard({ initialAttractions }: { initialAttractio
             </div>
 
             {/* Header row: time-label spacer + day names */}
-            <div className="flex border-b border-gray-200 bg-white shrink-0">
-              <div className="w-16 shrink-0 border-r border-gray-100" />
+            <div className="flex border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0">
+              <div className="w-16 shrink-0 border-r border-gray-100 dark:border-gray-800" />
 
               {visibleDates.map((date) => (
                 <DayHeader

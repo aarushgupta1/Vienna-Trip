@@ -1,6 +1,15 @@
 import { getAttractions } from '../actions';
-import { generateTripDates, formatDateFull, formatTime, CATEGORY_ICONS, CATEGORY_LABELS } from '@/lib/utils';
-import { Attraction } from '@/lib/types';
+import { getPins } from '../logistics/actions';
+import {
+  generateTripDates,
+  formatDateFull,
+  formatTime,
+  CATEGORY_ICONS,
+  CATEGORY_LABELS,
+  LOGISTICS_CATEGORY_ORDER,
+  PIN_CATEGORY_META,
+} from '@/lib/utils';
+import { Attraction, LogisticsPin } from '@/lib/types';
 import PrintButton from '@/components/PrintButton';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -8,7 +17,7 @@ import { ArrowLeft } from 'lucide-react';
 function EventRow({ attraction }: { attraction: Attraction }) {
   return (
     <div className="flex gap-4 py-2 border-b border-gray-100 last:border-b-0">
-      <div className="w-28 shrink-0 text-right text-xs text-gray-400 leading-relaxed pt-0.5">
+      <div className="w-32 shrink-0 text-right text-xs text-gray-400 leading-relaxed pt-0.5 whitespace-nowrap">
         {attraction.start_time ? (
           <>
             {formatTime(attraction.start_time)}
@@ -42,8 +51,28 @@ function EventRow({ attraction }: { attraction: Attraction }) {
   );
 }
 
+function PinRow({ pin }: { pin: LogisticsPin }) {
+  const meta = PIN_CATEGORY_META[pin.category];
+  return (
+    <div className="flex gap-4 py-2 border-b border-gray-100 last:border-b-0">
+      <div className="w-32 shrink-0 text-right text-xs text-gray-400 leading-relaxed pt-0.5 whitespace-nowrap">
+        {meta.icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-gray-900 text-sm leading-snug">{pin.title}</p>
+        {pin.content && (
+          <p className="text-xs text-gray-500 mt-0.5 leading-relaxed whitespace-pre-wrap">
+            {pin.content}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default async function PrintPage() {
   const attractions = await getAttractions();
+  const pins = await getPins();
   const dates = generateTripDates();
 
   const byDate = dates.map((date) => ({
@@ -58,6 +87,11 @@ export default async function PrintPage() {
   }));
 
   const unscheduled = attractions.filter((a) => !a.scheduled_date);
+
+  const pinsByCategory = LOGISTICS_CATEGORY_ORDER.map((category) => ({
+    category,
+    pins: pins.filter((p) => p.category === category),
+  })).filter((group) => group.pins.length > 0);
 
   return (
     <div className="min-h-screen bg-white">
@@ -110,6 +144,29 @@ export default async function PrintPage() {
             <div className="border border-gray-200 rounded-lg overflow-hidden">
               {unscheduled.map((a) => (
                 <EventRow key={a.id} attraction={a} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Logistics */}
+        {pinsByCategory.length > 0 && (
+          <div className="mt-10 pt-6 border-t-2 border-gray-200 break-inside-avoid print:break-before-page">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">
+              Logistics
+            </h2>
+            <div className="space-y-6">
+              {pinsByCategory.map(({ category, pins }) => (
+                <div key={category} className="break-inside-avoid">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+                    {PIN_CATEGORY_META[category].label}
+                  </h3>
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    {pins.map((pin) => (
+                      <PinRow key={pin.id} pin={pin} />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>

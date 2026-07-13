@@ -22,7 +22,7 @@ function TimeSlot({ id, top }: { id: string; top: number }) {
   return (
     <div
       ref={setNodeRef}
-      className={['absolute w-full border-b border-dashed border-gray-100 transition-colors', isOver ? 'bg-blue-100' : ''].join(' ')}
+      className={['absolute w-full border-b border-dashed border-gray-100 dark:border-gray-800 transition-colors', isOver ? 'bg-blue-100 dark:bg-blue-900/40' : ''].join(' ')}
       style={{ top, height: PIXELS_PER_HOUR / 2 }}
     />
   );
@@ -92,11 +92,11 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
   };
 
   return (
-    <div className="flex flex-col border-r border-gray-200 bg-white flex-1 min-w-0" style={{ height: gridHeight }}>
+    <div className="flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex-1 min-w-0" style={{ height: gridHeight }}>
       <div className="relative flex-shrink-0 cursor-pointer" style={{ height: gridHeight }} onClick={handleGridClick}>
         {Array.from({ length: GRID_END_HOUR - GRID_START_HOUR }, (_, i) =>
           i === 0 ? null : (
-            <div key={i} className="absolute w-full border-t border-gray-200 pointer-events-none" style={{ top: i * PIXELS_PER_HOUR }} />
+            <div key={i} className="absolute w-full border-t border-gray-200 dark:border-gray-800 pointer-events-none" style={{ top: i * PIXELS_PER_HOUR }} />
           )
         )}
 

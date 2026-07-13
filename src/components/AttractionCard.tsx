@@ -74,7 +74,7 @@ export default function AttractionCard({
               {attraction.name}
             </div>
 
-            <span className={['inline-block text-[10px] px-1.5 py-px rounded-full font-medium mt-1 bg-white/60', colors.text].join(' ')}>
+            <span className={['inline-block text-[10px] px-1.5 py-px rounded-full font-medium mt-1 bg-white/60 dark:bg-black/20', colors.text].join(' ')}>
               {CATEGORY_LABELS[attraction.category]}
             </span>
 

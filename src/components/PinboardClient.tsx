@@ -2,19 +2,10 @@
 
 import { useState } from 'react';
 import { LogisticsPin, LogisticsPinCategory } from '@/lib/types';
+import { LOGISTICS_CATEGORY_ORDER as CATEGORY_ORDER } from '@/lib/utils';
 import PinCard, { PIN_CATEGORY_META } from './PinCard';
 import PinModal from './PinModal';
 import { Plus } from 'lucide-react';
-
-const CATEGORY_ORDER: LogisticsPinCategory[] = [
-  'flights',
-  'accommodation',
-  'transport',
-  'documents',
-  'contacts',
-  'budget',
-  'other',
-];
 
 interface PinboardClientProps {
   initialPins: LogisticsPin[];
@@ -52,14 +43,14 @@ export default function PinboardClient({ initialPins }: PinboardClientProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Filter bar */}
-      <div className="flex items-center gap-2 px-5 py-3 border-b border-gray-100 bg-white overflow-x-auto shrink-0">
+      <div className="flex items-center gap-2 px-5 py-3 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-x-auto shrink-0">
         <button
           onClick={() => setActiveFilter(null)}
           className={[
             'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
             activeFilter === null
-              ? 'bg-gray-800 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+              ? 'bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700',
           ].join(' ')}
         >
           All
@@ -74,7 +65,7 @@ export default function PinboardClient({ initialPins }: PinboardClientProps) {
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
                 activeFilter === cat
                   ? `${meta.bg} ${meta.text} ring-1 ${meta.border}`
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700',
               ].join(' ')}
             >
               <span>{meta.icon}</span>
@@ -94,7 +85,7 @@ export default function PinboardClient({ initialPins }: PinboardClientProps) {
       {/* Grid */}
       <div className="flex-1 overflow-y-auto p-5">
         {filteredPins.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center gap-3 text-gray-400">
+          <div className="flex flex-col items-center justify-center h-full text-center gap-3 text-gray-400 dark:text-gray-500">
             <span className="text-4xl">📌</span>
             <p className="text-sm font-medium">No pins yet</p>
             <p className="text-xs max-w-xs">

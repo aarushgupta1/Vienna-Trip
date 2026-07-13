@@ -11,10 +11,20 @@ export const metadata: Metadata = {
   themeColor: '#2563eb',
 };
 
+const THEME_INIT_SCRIPT = `
+  try {
+    var theme = localStorage.getItem('vienna-theme');
+    if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    }
+  } catch (e) {}
+`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full">
-      <body className={`${geist.className} h-full antialiased`}>
+    <html lang="en" className="h-full" suppressHydrationWarning>
+      <body className={`${geist.className} h-full antialiased`} suppressHydrationWarning>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         {children}
         <ServiceWorkerRegistration />
       </body>

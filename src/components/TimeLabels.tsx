@@ -14,7 +14,7 @@ export default function TimeLabels({ timezone = 'vienna' }: { timezone?: 'vienna
   const offsetHours = timezone === 'eastern' ? -6 : 0;
 
   return (
-    <div className="w-16 shrink-0 border-r border-gray-200 bg-white" style={{ height: totalHeight }}>
+    <div className="w-16 shrink-0 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900" style={{ height: totalHeight }}>
       {hours.map((hour, i) => {
         const displayHour = ((hour + offsetHours) % 24 + 24) % 24;
         return (
@@ -25,7 +25,7 @@ export default function TimeLabels({ timezone = 'vienna' }: { timezone?: 'vienna
           >
             {i !== 0 && (
               <span
-                className="text-[10px] text-gray-400 font-medium leading-none"
+                className="text-[10px] text-gray-400 dark:text-gray-500 font-medium leading-none"
                 style={{ marginTop: -6 }}
               >
                 {formatHour(displayHour)}
