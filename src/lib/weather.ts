@@ -2,8 +2,8 @@ const VIENNA_LAT = 48.2082;
 const VIENNA_LON = 16.3738;
 
 export interface DayWeather {
-  high: number; // °C
-  low: number; // °C
+  high: number; // °F
+  low: number; // °F
   code: number; // WMO weather code
   isForecast: boolean; // true = actual forecast, false = historical average for the date
 }
@@ -22,7 +22,7 @@ export async function getWeatherForDates(dates: string[]): Promise<Record<string
   try {
     const res = await fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${VIENNA_LAT}&longitude=${VIENNA_LON}` +
-        `&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=Europe%2FVienna&forecast_days=16`,
+        `&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=Europe%2FVienna&forecast_days=16&temperature_unit=fahrenheit`,
       { next: { revalidate: 1800 } }
     );
     if (res.ok) {
@@ -74,7 +74,7 @@ async function getHistoricalAverages(dates: string[]): Promise<Record<string, Da
       try {
         const res = await fetch(
           `https://archive-api.open-meteo.com/v1/archive?latitude=${VIENNA_LAT}&longitude=${VIENNA_LON}` +
-            `&start_date=${start}&end_date=${end}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=Europe%2FVienna`,
+            `&start_date=${start}&end_date=${end}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=Europe%2FVienna&temperature_unit=fahrenheit`,
           { next: { revalidate: 60 * 60 * 24 } }
         );
         if (!res.ok) return;
