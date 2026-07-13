@@ -104,9 +104,11 @@ export async function getTravelSegments(
   return result;
 }
 
+const METERS_PER_MILE = 1609.34;
+
 export function formatDistance(meters: number): string {
-  if (meters < 1000) return `${Math.round(meters / 10) * 10}m`;
-  return `${(meters / 1000).toFixed(1)}km`;
+  if (meters < METERS_PER_MILE) return `${Math.round((meters * 3.28084) / 10) * 10}ft`;
+  return `${(meters / METERS_PER_MILE).toFixed(1)}mi`;
 }
 
 export function segmentMinutes(segment: TravelSegment, mode: TravelMode): number | null {
