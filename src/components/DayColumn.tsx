@@ -32,11 +32,17 @@ function TravelBadge({ top, height, segment, mode }: { top: number; height: numb
   const estimated = isEstimatedMode(mode);
   return (
     <div
-      className="absolute left-1 right-1 flex items-center justify-center pointer-events-none z-0"
+      className="absolute left-1 right-1 pointer-events-none z-0"
       style={{ top, height }}
       title={estimated ? 'Estimated from typical travel speeds' : 'Estimated driving time (real route)'}
     >
-      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-[9px] font-medium whitespace-nowrap">
+      {/* connector line running from the event above to the event below, so the
+          badge reads as sitting "on the path between them" rather than floating */}
+      <div className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2 border-l-2 border-dashed border-gray-300 dark:border-gray-600" />
+      <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600" />
+      <div className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600" />
+
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-[9px] font-medium whitespace-nowrap shadow-sm">
         <span>{TRAVEL_MODE_ICON[mode]}</span>
         <span>{formatDistance(segment.distanceMeters)}</span>
         <span className="text-gray-300 dark:text-gray-600">·</span>
