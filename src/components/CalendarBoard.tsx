@@ -35,9 +35,9 @@ import TimeLabels from './TimeLabels';
 import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, Footprints, Bus, Car, TrainFront } from 'lucide-react';
 
 function DayHeader({
-  date, count, note, onNoteChange, weather,
+  date, note, onNoteChange, weather,
 }: {
-  date: string; count: number; note: string; onNoteChange: (v: string) => void; weather?: DayWeather;
+  date: string; note: string; onNoteChange: (v: string) => void; weather?: DayWeather;
 }) {
   const { weekday, monthDay } = formatDate(date);
   const [editing, setEditing] = useState(false);
@@ -61,11 +61,6 @@ function DayHeader({
             </div>
           );
         })()}
-        {count > 0 && (
-          <div className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">
-            {count} event{count !== 1 ? 's' : ''}
-          </div>
-        )}
       </div>
       <div className="px-1.5 pb-1.5">
         {editing ? (
@@ -428,7 +423,6 @@ export default function CalendarBoard({
                 <DayHeader
                   key={date}
                   date={date}
-                  count={scheduledByDate[date]?.length ?? 0}
                   note={dayNotes[date] ?? ''}
                   weather={weather[date]}
                   onNoteChange={(v) => updateDayNote(date, v)}
