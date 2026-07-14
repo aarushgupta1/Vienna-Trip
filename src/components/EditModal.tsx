@@ -140,9 +140,10 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
               onClick={handleSave}
               disabled={isPending || isDeleting || !form.name.trim()}
               title="Save changes"
-              className="shrink-0 p-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl transition-colors"
+              className="shrink-0 flex items-center gap-1.5 px-3.5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors"
             >
-              <Save size={18} />
+              <Save size={16} />
+              {isPending ? 'Saving…' : 'Save'}
             </button>
           </div>
 
