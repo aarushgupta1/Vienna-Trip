@@ -16,6 +16,7 @@ import {
   minutesToTime,
 } from '@/lib/timeUtils';
 import { TravelSegment, TravelMode, segmentMinutes, formatDistance, isEstimatedMode } from '@/lib/travel';
+import { CalendarTimezone } from '@/lib/utils';
 import AttractionBlock from './AttractionBlock';
 import { Footprints, Bus, Car, TrainFront, ChevronDown } from 'lucide-react';
 
@@ -129,9 +130,10 @@ interface DayColumnProps {
   travelModes: Record<string, TravelMode>;
   onTravelModeChange: (pairKey: string, mode: TravelMode) => void;
   readOnly?: boolean;
+  timezone?: CalendarTimezone;
 }
 
-export default function DayColumn({ date, attractions, onAttractionClick, onTimeSlotClick, onAttractionResize, checkMode, checkedIds, onToggleCheck, travelSegments, travelModes, onTravelModeChange, readOnly = false }: DayColumnProps) {
+export default function DayColumn({ date, attractions, onAttractionClick, onTimeSlotClick, onAttractionResize, checkMode, checkedIds, onToggleCheck, travelSegments, travelModes, onTravelModeChange, readOnly = false, timezone = 'vienna' }: DayColumnProps) {
   const timedAttractions = attractions
     .filter((a) => a.start_time)
     .sort((a, b) => a.start_time!.localeCompare(b.start_time!));
@@ -231,6 +233,7 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
                 isChecked={checkedIds.has(a.id)}
                 onToggleCheck={() => onToggleCheck(a.id)}
                 readOnly={readOnly}
+                timezone={timezone}
               />
               {!readOnly && (
                 <div

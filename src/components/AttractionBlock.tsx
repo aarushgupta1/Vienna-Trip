@@ -3,7 +3,7 @@
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { Attraction } from '@/lib/types';
-import { CATEGORY_COLORS, CATEGORY_ICONS, formatTime } from '@/lib/utils';
+import { CATEGORY_COLORS, CATEGORY_ICONS, formatTimeInZone, CalendarTimezone } from '@/lib/utils';
 import { Clock, Circle, CheckCircle2 } from 'lucide-react';
 
 function linkify(text: string) {
@@ -36,6 +36,7 @@ interface AttractionBlockProps {
   isChecked?: boolean;
   onToggleCheck?: () => void;
   readOnly?: boolean;
+  timezone?: CalendarTimezone;
 }
 
 export default function AttractionBlock({
@@ -48,6 +49,7 @@ export default function AttractionBlock({
   isChecked = false,
   onToggleCheck,
   readOnly = false,
+  timezone = 'vienna',
 }: AttractionBlockProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: attraction.id,
@@ -111,8 +113,8 @@ export default function AttractionBlock({
           <div className={['flex items-center gap-0.5 mt-0.5 opacity-60', colors.text].join(' ')}>
             <Clock size={9} />
             <span className="text-[10px]">
-              {formatTime(attraction.start_time)}
-              {attraction.end_time && ` – ${formatTime(attraction.end_time)}`}
+              {formatTimeInZone(attraction.start_time, timezone)}
+              {attraction.end_time && ` – ${formatTimeInZone(attraction.end_time, timezone)}`}
             </span>
           </div>
         )}

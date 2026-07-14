@@ -441,6 +441,7 @@ export default function CalendarBoard({
                   travelModes={travelModes}
                   onTravelModeChange={updateTravelMode}
                   readOnly={!isOnline}
+                  timezone={timezone}
                 />
               ))}
             </div>
@@ -455,7 +456,7 @@ export default function CalendarBoard({
             const w = activeAttraction.start_time ? colWidth : 208;
             return (
               <div style={{ width: w }} className="pointer-events-none">
-                <AttractionBlock attraction={activeAttraction} isOverlay height={h} />
+                <AttractionBlock attraction={activeAttraction} isOverlay height={h} timezone={timezone} />
               </div>
             );
           })()}

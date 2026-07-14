@@ -4,14 +4,15 @@ import {
   PIXELS_PER_HOUR,
   formatHour,
 } from '@/lib/timeUtils';
+import { CalendarTimezone, EASTERN_OFFSET_HOURS } from '@/lib/utils';
 
-export default function TimeLabels({ timezone = 'vienna' }: { timezone?: 'vienna' | 'eastern' }) {
+export default function TimeLabels({ timezone = 'vienna' }: { timezone?: CalendarTimezone }) {
   const hours = Array.from(
     { length: GRID_END_HOUR - GRID_START_HOUR },
     (_, i) => GRID_START_HOUR + i
   );
   const totalHeight = (GRID_END_HOUR - GRID_START_HOUR) * PIXELS_PER_HOUR;
-  const offsetHours = timezone === 'eastern' ? -6 : 0;
+  const offsetHours = timezone === 'eastern' ? EASTERN_OFFSET_HOURS : 0;
 
   return (
     <div className="w-16 shrink-0 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900" style={{ height: totalHeight }}>

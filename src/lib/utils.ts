@@ -158,3 +158,22 @@ export function formatTime(timeStr: string): string {
   const h12 = hours % 12 || 12;
   return `${h12}:${String(minutes).padStart(2, '0')} ${ampm}`;
 }
+
+export type CalendarTimezone = 'vienna' | 'eastern';
+
+// Trip events are stored and edited in Vienna local time; this is how far
+// behind US Eastern runs during the trip (CEST UTC+2 vs EDT UTC-4 in August).
+export const EASTERN_OFFSET_HOURS = -6;
+
+// Shifts a stored "HH:MM" (always Vienna time) into the given display
+// timezone, for showing events on the calendar — never for editing/saving.
+export function shiftTime(timeStr: string, timezone: CalendarTimezone): string {
+  if (timezone !== 'eastern') return timeStr;
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  const shifted = ((hours + EASTERN_OFFSET_HOURS) % 24 + 24) % 24;
+  return `${String(shifted).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+export function formatTimeInZone(timeStr: string, timezone: CalendarTimezone): string {
+  return formatTime(shiftTime(timeStr, timezone));
+}
