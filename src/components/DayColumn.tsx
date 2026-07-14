@@ -178,6 +178,18 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
       setLocalHeights((prev) => { const n = { ...prev }; delete n[a.id]; return n; });
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
+
+      // The browser follows this mouseup with a native "click" on whatever
+      // element ends up under the cursor once the block has re-laid-out to
+      // its new height — swallow that one click so a resize drag can't
+      // accidentally open the edit modal for an event the user didn't click.
+      const suppressClick = (ce: MouseEvent) => {
+        ce.stopPropagation();
+        ce.preventDefault();
+        window.removeEventListener('click', suppressClick, true);
+      };
+      window.addEventListener('click', suppressClick, true);
+      setTimeout(() => window.removeEventListener('click', suppressClick, true), 0);
     };
 
     window.addEventListener('pointermove', onMove);
