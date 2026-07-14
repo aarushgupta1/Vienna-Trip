@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { Attraction } from '@/lib/types';
 import {
@@ -17,6 +17,7 @@ import {
 } from '@/lib/timeUtils';
 import { TravelSegment, TravelMode, segmentMinutes, formatDistance, isEstimatedMode } from '@/lib/travel';
 import AttractionBlock from './AttractionBlock';
+import { Footprints, Bus, Car, TrainFront } from 'lucide-react';
 
 const TRAVEL_MODE_ICON: Record<TravelMode, string> = {
   walk: '🚶',
@@ -25,29 +26,74 @@ const TRAVEL_MODE_ICON: Record<TravelMode, string> = {
   train: '🚆',
 };
 
+const TRAVEL_MODE_OPTIONS = [
+  ['walk', Footprints, 'Walking'],
+  ['bus', Bus, 'Bus'],
+  ['drive', Car, 'Driving'],
+  ['train', TrainFront, 'Train'],
+] as const;
+
 const MIN_GAP_PX = 24; // below this the gap is too tight to fit a badge without overlapping events
 
-function TravelBadge({ top, height, segment, mode }: { top: number; height: number; segment: TravelSegment; mode: TravelMode }) {
+function TravelBadge({
+  top, height, segment, mode, onModeChange,
+}: {
+  top: number; height: number; segment: TravelSegment; mode: TravelMode; onModeChange: (mode: TravelMode) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
   const minutes = segmentMinutes(segment, mode);
   const estimated = isEstimatedMode(mode);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
   return (
-    <div
-      className="absolute left-1 right-1 pointer-events-none z-0"
-      style={{ top, height }}
-      title={estimated ? 'Estimated from typical travel speeds' : 'Estimated driving time (real route)'}
-    >
+    <div ref={ref} className="absolute left-1 right-1 z-10" style={{ top, height }}>
       {/* connector line running from the event above to the event below, so the
           badge reads as sitting "on the path between them" rather than floating */}
-      <div className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2 border-l-2 border-dashed border-gray-300 dark:border-gray-600" />
-      <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600" />
-      <div className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600" />
+      <div className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2 border-l-2 border-dashed border-gray-300 dark:border-gray-600 pointer-events-none" />
+      <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600 pointer-events-none" />
+      <div className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600 pointer-events-none" />
 
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-[9px] font-medium whitespace-nowrap shadow-sm">
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+        title={(estimated ? 'Estimated from typical travel speeds' : 'Estimated driving time (real route)') + ' — click to change how you\'re getting there'}
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 text-gray-500 dark:text-gray-400 text-[9px] font-medium whitespace-nowrap shadow-sm transition-colors"
+      >
         <span>{TRAVEL_MODE_ICON[mode]}</span>
         <span>{formatDistance(segment.distanceMeters)}</span>
         <span className="text-gray-300 dark:text-gray-600">·</span>
         <span>{estimated && '~'}{minutes != null ? `${minutes} min` : '—'}</span>
-      </div>
+      </button>
+
+      {open && (
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 translate-y-3 flex rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg overflow-hidden z-30">
+          {TRAVEL_MODE_OPTIONS.map(([m, Icon, label]) => (
+            <button
+              key={m}
+              type="button"
+              title={label}
+              onClick={(e) => { e.stopPropagation(); onModeChange(m); setOpen(false); }}
+              className={[
+                'px-1.5 py-1 transition-colors',
+                mode === m
+                  ? 'bg-blue-500 text-white'
+                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700',
+              ].join(' ')}
+            >
+              <Icon size={12} />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -73,10 +119,11 @@ interface DayColumnProps {
   checkedIds: Set<string>;
   onToggleCheck: (id: string) => void;
   travelSegments: Record<string, TravelSegment>;
-  travelMode: TravelMode;
+  travelModes: Record<string, TravelMode>;
+  onTravelModeChange: (pairKey: string, mode: TravelMode) => void;
 }
 
-export default function DayColumn({ date, attractions, onAttractionClick, onTimeSlotClick, onAttractionResize, checkMode, checkedIds, onToggleCheck, travelSegments, travelMode }: DayColumnProps) {
+export default function DayColumn({ date, attractions, onAttractionClick, onTimeSlotClick, onAttractionResize, checkMode, checkedIds, onToggleCheck, travelSegments, travelModes, onTravelModeChange }: DayColumnProps) {
   const timedAttractions = attractions
     .filter((a) => a.start_time)
     .sort((a, b) => a.start_time!.localeCompare(b.start_time!));
@@ -170,7 +217,8 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
 
         {timedAttractions.slice(0, -1).map((a, i) => {
           const b = timedAttractions[i + 1];
-          const segment = travelSegments[`${a.id}->${b.id}`];
+          const pairKey = `${a.id}->${b.id}`;
+          const segment = travelSegments[pairKey];
           if (!segment) return null;
 
           const aHeight = localHeights[a.id] ?? getEventHeight(a.start_time!, a.end_time);
@@ -179,7 +227,16 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
           const gap = nextTop - prevBottom;
           if (gap < MIN_GAP_PX) return null;
 
-          return <TravelBadge key={`${a.id}-${b.id}`} top={prevBottom} height={gap} segment={segment} mode={travelMode} />;
+          return (
+            <TravelBadge
+              key={pairKey}
+              top={prevBottom}
+              height={gap}
+              segment={segment}
+              mode={travelModes[pairKey] ?? 'walk'}
+              onModeChange={(mode) => onTravelModeChange(pairKey, mode)}
+            />
+          );
         })}
       </div>
     </div>

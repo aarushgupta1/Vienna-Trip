@@ -129,14 +129,6 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
               />
             </div>
             <button
-              onClick={handleDelete}
-              disabled={isDeleting || isPending}
-              title="Delete attraction"
-              className="shrink-0 p-2.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-700 dark:hover:text-red-300 rounded-xl transition-colors disabled:opacity-40"
-            >
-              <Trash2 size={18} />
-            </button>
-            <button
               onClick={handleSave}
               disabled={isPending || isDeleting || !form.name.trim()}
               title="Save changes"
@@ -144,6 +136,14 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
             >
               <Save size={16} />
               {isPending ? 'Saving…' : 'Save'}
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting || isPending}
+              title="Delete attraction"
+              className="shrink-0 p-2.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-700 dark:hover:text-red-300 rounded-xl transition-colors disabled:opacity-40"
+            >
+              <Trash2 size={18} />
             </button>
           </div>
 

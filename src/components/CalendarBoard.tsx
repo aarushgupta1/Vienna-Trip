@@ -32,7 +32,7 @@ import AttractionBlock from './AttractionBlock';
 import EditModal from './EditModal';
 import CreateModal from './CreateModal';
 import TimeLabels from './TimeLabels';
-import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, Footprints, Bus, Car, TrainFront } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen } from 'lucide-react';
 
 function DayHeader({
   date, note, onNoteChange, weather,
@@ -114,7 +114,7 @@ export default function CalendarBoard({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [timezone, setTimezone] = useState<'vienna' | 'eastern'>('vienna');
-  const [travelMode, setTravelMode] = useState<TravelMode>('walk');
+  const [travelModes, setTravelModes] = useState<Record<string, TravelMode>>({});
   const [dayNotes, setDayNotes] = useState<Record<string, string>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const [, startTransition] = useTransition();
@@ -187,6 +187,10 @@ export default function CalendarBoard({
 
   const updateDayNote = (date: string, text: string) => {
     setDayNotes((prev) => ({ ...prev, [date]: text }));
+  };
+
+  const updateTravelMode = (pairKey: string, mode: TravelMode) => {
+    setTravelModes((prev) => ({ ...prev, [pairKey]: mode }));
   };
 
   // Keep colWidth in sync with the actual rendered column width
@@ -388,31 +392,6 @@ export default function CalendarBoard({
                   ET
                 </button>
               </div>
-
-              {/* Travel mode toggle — controls how the times between events are estimated */}
-              <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden ml-1.5">
-                {(
-                  [
-                    ['walk', Footprints, 'Walking'],
-                    ['bus', Bus, 'Bus'],
-                    ['drive', Car, 'Driving'],
-                    ['train', TrainFront, 'Train'],
-                  ] as const
-                ).map(([mode, Icon, label]) => (
-                  <button
-                    key={mode}
-                    onClick={() => setTravelMode(mode)}
-                    title={label}
-                    className={
-                      travelMode === mode
-                        ? 'px-2 py-1.5 bg-blue-500 text-white'
-                        : 'px-2 py-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors'
-                    }
-                  >
-                    <Icon size={13} />
-                  </button>
-                ))}
-              </div>
             </div>
 
             {/* Header row: time-label spacer + day names */}
@@ -445,7 +424,8 @@ export default function CalendarBoard({
                   checkedIds={checkedIds}
                   onToggleCheck={toggleChecked}
                   travelSegments={travelSegments}
-                  travelMode={travelMode}
+                  travelModes={travelModes}
+                  onTravelModeChange={updateTravelMode}
                 />
               ))}
             </div>
