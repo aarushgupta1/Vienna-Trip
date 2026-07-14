@@ -2,13 +2,13 @@
 
 import { useState, useTransition } from 'react';
 import { Attraction, Category } from '@/lib/types';
-import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull, buildGCalUrl } from '@/lib/utils';
+import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull } from '@/lib/utils';
 import { updateAttraction, deleteAttraction } from '@/app/actions';
 import { findTimeConflict } from '@/lib/timeUtils';
 import LocationAutocomplete from './LocationAutocomplete';
 import TimeInput from './TimeInput';
 import ConfirmDialog from './ConfirmDialog';
-import { X, Trash2, CalendarPlus, Save } from 'lucide-react';
+import { X, Trash2, Save } from 'lucide-react';
 
 interface EditModalProps {
   attraction: Attraction;
@@ -237,44 +237,20 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
             />
           </div>
 
-          {/* Description & Notes */}
+          {/* Description */}
           <div>
             <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-              Description & Notes
+              Description
             </label>
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
-              <textarea
-                value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                rows={2}
-                className="w-full px-3.5 py-2.5 text-sm bg-transparent dark:text-gray-100 focus:outline-none resize-none placeholder-gray-300 dark:placeholder-gray-600"
-                placeholder="Brief description..."
-              />
-              <textarea
-                value={form.notes}
-                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                rows={2}
-                className="w-full px-3.5 py-2.5 text-sm bg-transparent dark:text-gray-100 focus:outline-none resize-none placeholder-gray-300 dark:placeholder-gray-600"
-                placeholder="Booking links, ticket prices, tips for the family..."
-              />
-            </div>
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              rows={3}
+              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300 dark:placeholder-gray-600"
+              placeholder="Brief description..."
+            />
           </div>
         </div>
-
-        {/* Footer */}
-        {form.scheduled_date && (
-          <div className="px-6 pb-5">
-            <a
-              href={buildGCalUrl(form.name || attraction.name, form.scheduled_date, form.start_time, form.end_time, form.description)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex w-full items-center justify-center gap-2 px-4 py-2.5 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-xl text-sm font-medium transition-colors"
-            >
-              <CalendarPlus size={14} />
-              Add to Google Calendar
-            </a>
-          </div>
-        )}
       </div>
 
       {showDiscardConfirm && (
