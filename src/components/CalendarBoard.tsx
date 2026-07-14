@@ -122,6 +122,7 @@ export default function CalendarBoard({
   useEffect(() => {
     try { setCheckedIds(new Set(JSON.parse(localStorage.getItem('vienna-checked') ?? '[]'))); } catch {}
     try { setDayNotes(JSON.parse(localStorage.getItem('vienna-day-notes') ?? '{}')); } catch {}
+    try { setTravelModes(JSON.parse(localStorage.getItem('vienna-travel-modes') ?? '{}')); } catch {}
   }, []);
 
   useEffect(() => {
@@ -152,6 +153,10 @@ export default function CalendarBoard({
   useEffect(() => {
     localStorage.setItem('vienna-day-notes', JSON.stringify(dayNotes));
   }, [dayNotes]);
+
+  useEffect(() => {
+    localStorage.setItem('vienna-travel-modes', JSON.stringify(travelModes));
+  }, [travelModes]);
 
   // Realtime: sync changes made by other family members
   useEffect(() => {

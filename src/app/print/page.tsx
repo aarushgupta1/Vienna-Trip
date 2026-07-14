@@ -9,8 +9,10 @@ import {
   LOGISTICS_CATEGORY_ORDER,
   PIN_CATEGORY_META,
 } from '@/lib/utils';
+import { getTravelSegments, TravelSegment } from '@/lib/travel';
 import { Attraction, LogisticsPin } from '@/lib/types';
 import PrintButton from '@/components/PrintButton';
+import PrintTravelRow from '@/components/PrintTravelRow';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
@@ -51,6 +53,30 @@ function EventRow({ attraction }: { attraction: Attraction }) {
   );
 }
 
+function DayEvents({ events, travelSegments }: { events: Attraction[]; travelSegments: Record<string, TravelSegment> }) {
+  const timed = events.filter((a) => a.start_time);
+  const untimed = events.filter((a) => !a.start_time);
+
+  return (
+    <>
+      {timed.map((a, i) => {
+        const next = timed[i + 1];
+        const pairKey = next ? `${a.id}->${next.id}` : null;
+        const segment = pairKey ? travelSegments[pairKey] : undefined;
+        return (
+          <div key={a.id}>
+            <EventRow attraction={a} />
+            {pairKey && segment && <PrintTravelRow pairKey={pairKey} segment={segment} />}
+          </div>
+        );
+      })}
+      {untimed.map((a) => (
+        <EventRow key={a.id} attraction={a} />
+      ))}
+    </>
+  );
+}
+
 function PinRow({ pin }: { pin: LogisticsPin }) {
   const meta = PIN_CATEGORY_META[pin.category];
   return (
@@ -73,6 +99,7 @@ function PinRow({ pin }: { pin: LogisticsPin }) {
 export default async function PrintPage() {
   const attractions = await getAttractions();
   const pins = await getPins();
+  const travelSegments = await getTravelSegments(attractions);
   const dates = generateTripDates();
 
   const byDate = dates.map((date) => ({
@@ -154,9 +181,7 @@ export default async function PrintPage() {
                   <p className="text-sm text-gray-300 italic pl-32">Nothing scheduled</p>
                 ) : (
                   <div className="border border-gray-200 rounded-lg overflow-hidden">
-                    {events.map((a) => (
-                      <EventRow key={a.id} attraction={a} />
-                    ))}
+                    <DayEvents events={events} travelSegments={travelSegments} />
                   </div>
                 )}
               </div>
