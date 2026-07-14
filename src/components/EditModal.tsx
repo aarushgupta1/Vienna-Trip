@@ -112,63 +112,6 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
             />
           </div>
 
-          {/* Category */}
-          <div>
-            <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-              Category
-            </label>
-            <div className="grid grid-cols-2 gap-1.5">
-              {categories.map((cat) => (
-                <label
-                  key={cat}
-                  className={[
-                    'flex items-center gap-2 px-3 py-2 border rounded-xl cursor-pointer text-xs font-medium transition-colors',
-                    form.category === cat
-                      ? 'border-blue-400 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300'
-                      : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300',
-                  ].join(' ')}
-                >
-                  <input
-                    type="radio"
-                    name="edit-category"
-                    value={cat}
-                    checked={form.category === cat}
-                    onChange={() => setForm((f) => ({ ...f, category: cat }))}
-                    className="sr-only"
-                  />
-                  {CATEGORY_ICONS[cat]} {CATEGORY_LABELS[cat]}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-              Description
-            </label>
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              rows={2}
-              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300 dark:placeholder-gray-600"
-              placeholder="Brief description..."
-            />
-          </div>
-
-          {/* Location */}
-          <div>
-            <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-              Location
-            </label>
-            <LocationAutocomplete
-              value={form.location}
-              onChange={(v) => setForm((f) => ({ ...f, location: v }))}
-              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300 dark:placeholder-gray-600"
-              placeholder="Address or place name — enables walking/transit times"
-            />
-          </div>
-
           {/* Day */}
           <div>
             <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
@@ -217,6 +160,63 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
             {conflictError && (
               <p className="mt-1.5 text-xs text-red-500 dark:text-red-400 font-medium">{conflictError}</p>
             )}
+          </div>
+
+          {/* Category */}
+          <div>
+            <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+              Category
+            </label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {categories.map((cat) => (
+                <label
+                  key={cat}
+                  className={[
+                    'flex items-center gap-2 px-3 py-2 border rounded-xl cursor-pointer text-xs font-medium transition-colors',
+                    form.category === cat
+                      ? 'border-blue-400 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300'
+                      : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300',
+                  ].join(' ')}
+                >
+                  <input
+                    type="radio"
+                    name="edit-category"
+                    value={cat}
+                    checked={form.category === cat}
+                    onChange={() => setForm((f) => ({ ...f, category: cat }))}
+                    className="sr-only"
+                  />
+                  {CATEGORY_ICONS[cat]} {CATEGORY_LABELS[cat]}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Location */}
+          <div>
+            <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+              Location
+            </label>
+            <LocationAutocomplete
+              value={form.location}
+              onChange={(v) => setForm((f) => ({ ...f, location: v }))}
+              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300 dark:placeholder-gray-600"
+              placeholder="Address or place name"
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+              Description
+            </label>
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              rows={2}
+              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300 dark:placeholder-gray-600"
+              placeholder="Brief description..."
+            />
           </div>
 
           {/* Notes */}

@@ -83,6 +83,7 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
   const timeSlots = generateTimeSlots(date);
   const gridHeight = (GRID_END_HOUR - GRID_START_HOUR) * PIXELS_PER_HOUR;
   const [localHeights, setLocalHeights] = useState<Record<string, number>>({});
+  const [resizingId, setResizingId] = useState<string | null>(null);
 
   // Always keep a current ref so window listeners aren't affected by stale closures
   const onAttractionResizeRef = useRef(onAttractionResize);
@@ -107,6 +108,8 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
       ? timeToMinutes(a.end_time)
       : startMinutes + DEFAULT_DURATION_MINUTES;
 
+    setResizingId(a.id);
+
     const snap = (clientY: number) => {
       const raw = origEndMinutes + (clientY - startY) / PIXELS_PER_MINUTE;
       const snapped = Math.round(raw / 15) * 15;
@@ -122,6 +125,7 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
       const endMin = snap(ev.clientY);
       onAttractionResizeRef.current(a.id, minutesToTime(endMin));
       setLocalHeights((prev) => { const n = { ...prev }; delete n[a.id]; return n; });
+      setResizingId(null);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
     };
@@ -156,7 +160,7 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
                 isChecked={checkedIds.has(a.id)}
                 onToggleCheck={() => onToggleCheck(a.id)}
               />
-              {height >= 20 && (
+              {(height >= 20 || resizingId === a.id) && (
                 <div
                   className="absolute bottom-0 left-0 right-0 h-4 z-20 cursor-s-resize flex items-end justify-center pb-0.5"
                   onPointerDown={(e) => startResize(e, a)}

@@ -47,54 +47,6 @@ export default function NewAttractionPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
-                Category
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {categories.map((cat, i) => (
-                  <label
-                    key={cat}
-                    className="flex items-center gap-2 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 has-[:checked]:border-blue-400 dark:has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50 dark:has-[:checked]:bg-blue-950/40 transition-colors text-sm"
-                  >
-                    <input
-                      type="radio"
-                      name="category"
-                      value={cat}
-                      defaultChecked={i === 0}
-                      className="sr-only"
-                    />
-                    <span>{CATEGORY_ICONS[cat]}</span>
-                    <span className="text-gray-700 dark:text-gray-300 font-medium text-xs">{CATEGORY_LABELS[cat]}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
-                Description
-              </label>
-              <textarea
-                name="description"
-                rows={2}
-                placeholder="Brief description of the attraction..."
-                className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-gray-50 dark:bg-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
-                Location
-              </label>
-              <LocationAutocomplete
-                name="location"
-                defaultValue=""
-                placeholder="Address or place name — enables walking/transit times"
-                className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
                 Schedule for day
               </label>
               <select
@@ -131,6 +83,54 @@ export default function NewAttractionPage() {
                   className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
+                Category
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {categories.map((cat, i) => (
+                  <label
+                    key={cat}
+                    className="flex items-center gap-2 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 has-[:checked]:border-blue-400 dark:has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50 dark:has-[:checked]:bg-blue-950/40 transition-colors text-sm"
+                  >
+                    <input
+                      type="radio"
+                      name="category"
+                      value={cat}
+                      defaultChecked={i === 0}
+                      className="sr-only"
+                    />
+                    <span>{CATEGORY_ICONS[cat]}</span>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium text-xs">{CATEGORY_LABELS[cat]}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
+                Location
+              </label>
+              <LocationAutocomplete
+                name="location"
+                defaultValue=""
+                placeholder="Address or place name"
+                className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
+                Description
+              </label>
+              <textarea
+                name="description"
+                rows={2}
+                placeholder="Brief description of the attraction..."
+                className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-gray-50 dark:bg-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600"
+              />
             </div>
 
             <div>
