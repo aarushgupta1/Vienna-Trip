@@ -7,7 +7,7 @@ import { updateAttraction, deleteAttraction } from '@/app/actions';
 import { findTimeConflict } from '@/lib/timeUtils';
 import LocationAutocomplete from './LocationAutocomplete';
 import TimeInput from './TimeInput';
-import { X, Trash2, CalendarPlus } from 'lucide-react';
+import { X, Trash2, CalendarPlus, Save } from 'lucide-react';
 
 interface EditModalProps {
   attraction: Attraction;
@@ -109,17 +109,36 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
 
         {/* Form */}
         <div className="px-6 py-5 space-y-4">
-          {/* Name */}
-          <div>
-            <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-              Name
-            </label>
-            <input
-              type="text"
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+          {/* Name + actions */}
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+                Name <span className="text-red-400">*</span>
+              </label>
+              <input
+                required
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting || isPending}
+              title="Delete attraction"
+              className="shrink-0 p-2.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-700 dark:hover:text-red-300 rounded-xl transition-colors disabled:opacity-40"
+            >
+              <Trash2 size={18} />
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isPending || isDeleting || !form.name.trim()}
+              title="Save changes"
+              className="shrink-0 p-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl transition-colors"
+            >
+              <Save size={18} />
+            </button>
           </div>
 
           {/* Day */}
@@ -213,45 +232,33 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
             />
           </div>
 
-          {/* Description */}
+          {/* Description & Notes */}
           <div>
             <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-              Description
+              Description & Notes
             </label>
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              rows={2}
-              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300 dark:placeholder-gray-600"
-              placeholder="Brief description..."
-            />
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-              Notes & Tips
-            </label>
-            <textarea
-              value={form.notes}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-              rows={3}
-              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300 dark:placeholder-gray-600"
-              placeholder="Booking links, ticket prices, tips for the family..."
-            />
+            <div className="space-y-2">
+              <textarea
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                rows={2}
+                className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300 dark:placeholder-gray-600"
+                placeholder="Brief description..."
+              />
+              <textarea
+                value={form.notes}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                rows={2}
+                className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300 dark:placeholder-gray-600"
+                placeholder="Booking links, ticket prices, tips for the family..."
+              />
+            </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 pb-5 space-y-2">
-          <button
-            onClick={handleSave}
-            disabled={isPending || isDeleting || !form.name.trim()}
-            className="flex w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors items-center justify-center"
-          >
-            {isPending ? 'Saving…' : 'Save Changes'}
-          </button>
-          {form.scheduled_date && (
+        {form.scheduled_date && (
+          <div className="px-6 pb-5">
             <a
               href={buildGCalUrl(form.name || attraction.name, form.scheduled_date, form.start_time, form.end_time, form.description)}
               target="_blank"
@@ -261,16 +268,8 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
               <CalendarPlus size={14} />
               Add to Google Calendar
             </a>
-          )}
-          <button
-            onClick={handleDelete}
-            disabled={isDeleting || isPending}
-            className="flex w-full items-center justify-center gap-2 px-4 py-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-700 dark:hover:text-red-300 rounded-xl text-sm font-medium transition-colors disabled:opacity-40"
-          >
-            <Trash2 size={14} />
-            {isDeleting ? 'Deleting…' : 'Delete attraction'}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
