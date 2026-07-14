@@ -10,12 +10,14 @@ interface UnscheduledSidebarProps {
   attractions: Attraction[];
   onAttractionClick: (a: Attraction) => void;
   onClose?: () => void;
+  readOnly?: boolean;
 }
 
 export default function UnscheduledSidebar({
   attractions,
   onAttractionClick,
   onClose,
+  readOnly = false,
 }: UnscheduledSidebarProps) {
   const { setNodeRef, isOver } = useDroppable({ id: 'unscheduled' });
 
@@ -38,13 +40,23 @@ export default function UnscheduledSidebar({
             </button>
           )}
         </div>
-        <Link
-          href="/attractions/new"
-          className="flex items-center justify-center gap-1.5 w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
-        >
-          <Plus size={13} />
-          Add Attraction
-        </Link>
+        {readOnly ? (
+          <div
+            className="flex items-center justify-center gap-1.5 w-full bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 text-xs font-semibold px-3 py-2 rounded-lg cursor-not-allowed"
+            title="Unavailable while offline"
+          >
+            <Plus size={13} />
+            Add Attraction
+          </div>
+        ) : (
+          <Link
+            href="/attractions/new"
+            className="flex items-center justify-center gap-1.5 w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
+          >
+            <Plus size={13} />
+            Add Attraction
+          </Link>
+        )}
       </div>
 
       <div
@@ -68,6 +80,7 @@ export default function UnscheduledSidebar({
               key={attraction.id}
               attraction={attraction}
               onClick={() => onAttractionClick(attraction)}
+              dragDisabled={readOnly}
             />
           ))
         )}

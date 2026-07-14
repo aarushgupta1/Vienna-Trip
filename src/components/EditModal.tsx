@@ -9,7 +9,7 @@ import { findTimeConflict } from '@/lib/timeUtils';
 import LocationAutocomplete from './LocationAutocomplete';
 import TimeInput from './TimeInput';
 import ConfirmDialog from './ConfirmDialog';
-import { X, Trash2, Save, Upload, FileText } from 'lucide-react';
+import { X, Trash2, Save, Upload, FileText, WifiOff } from 'lucide-react';
 
 interface EditModalProps {
   attraction: Attraction;
@@ -17,9 +17,10 @@ interface EditModalProps {
   onClose: () => void;
   onSaved: (updated: Attraction) => void;
   onDeleted: (id: string) => void;
+  readOnly?: boolean;
 }
 
-export default function EditModal({ attraction, allAttractions, onClose, onSaved, onDeleted }: EditModalProps) {
+export default function EditModal({ attraction, allAttractions, onClose, onSaved, onDeleted, readOnly = false }: EditModalProps) {
   const initialForm = {
     name: attraction.name,
     description: attraction.description ?? '',
@@ -134,6 +135,13 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
           </button>
         </div>
 
+        {readOnly && (
+          <div className="flex items-center gap-2 px-6 py-2 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs">
+            <WifiOff size={13} className="shrink-0" />
+            You&apos;re offline — read-only until you&apos;re back online.
+          </div>
+        )}
+
         {/* Form */}
         <div className="px-6 py-5 space-y-4">
           {/* Name + actions */}
@@ -147,12 +155,13 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
                 type="text"
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={readOnly}
+                className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
               />
             </div>
             <button
               onClick={handleSave}
-              disabled={isPending || isDeleting || !form.name.trim()}
+              disabled={isPending || isDeleting || !form.name.trim() || readOnly}
               title="Save changes"
               className="shrink-0 flex items-center gap-1.5 px-3.5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors"
             >
@@ -161,7 +170,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
             </button>
             <button
               onClick={handleDelete}
-              disabled={isDeleting || isPending}
+              disabled={isDeleting || isPending || readOnly}
               title="Delete attraction"
               className="shrink-0 p-2.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-700 dark:hover:text-red-300 rounded-xl transition-colors disabled:opacity-40"
             >
@@ -177,7 +186,8 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
             <select
               value={form.scheduled_date}
               onChange={(e) => setForm((f) => ({ ...f, scheduled_date: e.target.value }))}
-              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-200"
+              disabled={readOnly}
+              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-200 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <option value="">Unscheduled</option>
               {tripDates.map((d) => (
@@ -198,6 +208,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
                 <TimeInput
                   value={form.start_time}
                   onChange={(v) => { setConflictError(null); setForm((f) => ({ ...f, start_time: v })); }}
+                  disabled={readOnly}
                   className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
@@ -208,6 +219,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
                 <TimeInput
                   value={form.end_time}
                   onChange={(v) => { setConflictError(null); setForm((f) => ({ ...f, end_time: v })); }}
+                  disabled={readOnly}
                   className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
@@ -227,7 +239,8 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
                 <label
                   key={cat}
                   className={[
-                    'flex items-center gap-2 px-3 py-2 border rounded-xl cursor-pointer text-xs font-medium transition-colors',
+                    'flex items-center gap-2 px-3 py-2 border rounded-xl text-xs font-medium transition-colors',
+                    readOnly ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
                     form.category === cat
                       ? 'border-blue-400 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300'
                       : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300',
@@ -239,6 +252,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
                     value={cat}
                     checked={form.category === cat}
                     onChange={() => setForm((f) => ({ ...f, category: cat }))}
+                    disabled={readOnly}
                     className="sr-only"
                   />
                   {CATEGORY_ICONS[cat]} {CATEGORY_LABELS[cat]}
@@ -255,6 +269,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
             <LocationAutocomplete
               value={form.location}
               onChange={(v) => setForm((f) => ({ ...f, location: v }))}
+              disabled={readOnly}
               className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300 dark:placeholder-gray-600"
               placeholder="Address or place name"
             />
@@ -269,8 +284,8 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               rows={3}
-              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300 dark:placeholder-gray-600"
-              placeholder="Brief description..."
+              disabled={readOnly}
+              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300 dark:placeholder-gray-600 disabled:cursor-not-allowed disabled:opacity-60"
             />
           </div>
 
@@ -313,7 +328,8 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
                     <button
                       type="button"
                       onClick={() => handleTicketDelete(url)}
-                      className="shrink-0 p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                      disabled={readOnly}
+                      className="shrink-0 p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors disabled:cursor-not-allowed disabled:hover:text-gray-400"
                       title="Remove ticket"
                     >
                       <X size={14} />
@@ -322,21 +338,23 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
                 );
               })}
 
-              <label className="flex items-center justify-center gap-1.5 px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                <Upload size={14} />
-                {uploadingTicket ? 'Uploading…' : 'Upload ticket'}
-                <input
-                  type="file"
-                  accept="image/*,application/pdf"
-                  className="hidden"
-                  disabled={uploadingTicket}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    e.target.value = '';
-                    if (file) handleTicketUpload(file);
-                  }}
-                />
-              </label>
+              {!readOnly && (
+                <label className="flex items-center justify-center gap-1.5 px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  <Upload size={14} />
+                  {uploadingTicket ? 'Uploading…' : 'Upload ticket'}
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    className="hidden"
+                    disabled={uploadingTicket}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = '';
+                      if (file) handleTicketUpload(file);
+                    }}
+                  />
+                </label>
+              )}
               {ticketError && (
                 <p className="text-xs text-red-500 dark:text-red-400 font-medium">{ticketError}</p>
               )}

@@ -11,6 +11,7 @@ interface LocationAutocompleteProps {
   onChange?: (value: string) => void;
   placeholder?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 const DEBOUNCE_MS = 350;
@@ -22,6 +23,7 @@ export default function LocationAutocomplete({
   onChange,
   placeholder,
   className,
+  disabled = false,
 }: LocationAutocompleteProps) {
   const isControlled = value !== undefined;
   const [internalValue, setInternalValue] = useState(defaultValue ?? '');
@@ -76,12 +78,13 @@ export default function LocationAutocomplete({
         type="text"
         autoComplete="off"
         value={text}
+        disabled={disabled}
         onChange={(e) => handleChange(e.target.value)}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
         placeholder={placeholder}
-        className={className}
+        className={[className, disabled ? 'cursor-not-allowed opacity-60' : ''].filter(Boolean).join(' ')}
       />
-      {open && suggestions.length > 0 && (
+      {open && !disabled && suggestions.length > 0 && (
         <ul className="absolute z-30 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-56 overflow-auto">
           {suggestions.map((s, i) => (
             <li key={i}>

@@ -12,6 +12,7 @@ interface TimeInputProps {
   onChange?: (value: string) => void; // receives "HH:MM" or ''
   placeholder?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 const STEP_MINUTES = 15;
@@ -30,7 +31,7 @@ function nearestOptionValue(hhmm: string): string {
   return TIME_OPTIONS[idx].value;
 }
 
-export default function TimeInput({ name, value, defaultValue, onChange, placeholder, className }: TimeInputProps) {
+export default function TimeInput({ name, value, defaultValue, onChange, placeholder, className, disabled = false }: TimeInputProps) {
   const isControlled = value !== undefined;
   const [internalValue, setInternalValue] = useState(defaultValue ?? '');
   const storedValue = isControlled ? value! : internalValue;
@@ -107,8 +108,12 @@ export default function TimeInput({ name, value, defaultValue, onChange, placeho
   return (
     <div
       ref={containerRef}
-      onClick={() => inputRef.current?.focus()}
-      className={[className, 'relative flex items-center gap-1.5 cursor-text focus-within:ring-2 focus-within:ring-blue-500'].filter(Boolean).join(' ')}
+      onClick={() => !disabled && inputRef.current?.focus()}
+      className={[
+        className,
+        'relative flex items-center gap-1.5 focus-within:ring-2 focus-within:ring-blue-500',
+        disabled ? 'cursor-not-allowed opacity-60' : 'cursor-text',
+      ].filter(Boolean).join(' ')}
     >
       <input
         ref={inputRef}
@@ -116,6 +121,7 @@ export default function TimeInput({ name, value, defaultValue, onChange, placeho
         inputMode="numeric"
         autoComplete="off"
         value={text}
+        disabled={disabled}
         onChange={(e) => setText(e.target.value)}
         onFocus={() => setOpen(true)}
         onBlur={handleBlur}
@@ -124,19 +130,20 @@ export default function TimeInput({ name, value, defaultValue, onChange, placeho
           if (e.key === 'Escape') { setText(storedValue ? formatTime(storedValue) : ''); setOpen(false); inputRef.current?.blur(); }
         }}
         placeholder={placeholder ?? '--:--'}
-        className="w-full min-w-0 bg-transparent outline-none placeholder-gray-300 dark:placeholder-gray-600"
+        className="w-full min-w-0 bg-transparent outline-none placeholder-gray-300 dark:placeholder-gray-600 disabled:cursor-not-allowed"
       />
       <button
         type="button"
         tabIndex={-1}
+        disabled={disabled}
         onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); inputRef.current?.focus(); }}
-        className="shrink-0 opacity-40 hover:opacity-80 transition-opacity"
+        className="shrink-0 opacity-40 hover:opacity-80 transition-opacity disabled:hover:opacity-40"
         aria-label="Choose a time"
       >
         <Clock size={14} />
       </button>
       {name && <input type="hidden" name={name} value={storedValue} />}
-      {open && (
+      {open && !disabled && (
         <ul ref={listRef} className="absolute z-30 right-0 top-full mt-1 w-32 max-h-[10.5rem] overflow-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1">
           {TIME_OPTIONS.map((opt) => (
             <li key={opt.value} data-value={opt.value}>

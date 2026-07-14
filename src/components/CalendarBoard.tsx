@@ -25,6 +25,7 @@ import {
   findTimeConflict,
 } from '@/lib/timeUtils';
 import { getSupabaseClient } from '@/lib/supabase';
+import { useOnlineStatus } from '@/lib/useOnlineStatus';
 import { updateAttraction } from '@/app/actions';
 import DayColumn from './DayColumn';
 import UnscheduledSidebar from './UnscheduledSidebar';
@@ -32,7 +33,7 @@ import AttractionBlock from './AttractionBlock';
 import EditModal from './EditModal';
 import CreateModal from './CreateModal';
 import TimeLabels from './TimeLabels';
-import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, WifiOff } from 'lucide-react';
 
 function DayHeader({
   date, note, onNoteChange, weather,
@@ -118,6 +119,7 @@ export default function CalendarBoard({
   const [dayNotes, setDayNotes] = useState<Record<string, string>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const [, startTransition] = useTransition();
+  const isOnline = useOnlineStatus();
 
   useEffect(() => {
     try { setCheckedIds(new Set(JSON.parse(localStorage.getItem('vienna-checked') ?? '[]'))); } catch {}
@@ -343,10 +345,17 @@ export default function CalendarBoard({
               attractions={unscheduled}
               onAttractionClick={(a) => { setEditingAttraction(a); setSidebarOpen(false); }}
               onClose={() => setSidebarOpen(false)}
+              readOnly={!isOnline}
             />
           </div>
 
           <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+            {!isOnline && (
+              <div className="flex items-center justify-center gap-2 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 px-3 py-1.5 text-amber-800 dark:text-amber-300 text-xs shrink-0">
+                <WifiOff size={13} className="shrink-0" />
+                You&apos;re offline — read-only until you&apos;re back online.
+              </div>
+            )}
             {/* Universal nav strip — arrows on top for all screen sizes */}
             <div className="flex items-center bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-2 py-1.5 shrink-0">
               {/* Sidebar toggle — only useful on mobile since sidebar is always visible on desktop */}
@@ -431,6 +440,7 @@ export default function CalendarBoard({
                   travelSegments={travelSegments}
                   travelModes={travelModes}
                   onTravelModeChange={updateTravelMode}
+                  readOnly={!isOnline}
                 />
               ))}
             </div>
@@ -468,6 +478,7 @@ export default function CalendarBoard({
             setEditingAttraction(null);
           }}
           onDeleted={handleAttractionDeleted}
+          readOnly={!isOnline}
         />
       )}
 

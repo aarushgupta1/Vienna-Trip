@@ -4,6 +4,7 @@ import { generateTripDates, formatDateFull, CATEGORY_LABELS, CATEGORY_ICONS } fr
 import { Category } from '@/lib/types';
 import LocationAutocomplete from '@/components/LocationAutocomplete';
 import TimeInput from '@/components/TimeInput';
+import { OfflineFormBanner, NewAttractionSubmitButton } from '@/components/NewAttractionSubmit';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
@@ -31,6 +32,8 @@ export default function NewAttractionPage() {
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-7">
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">Add Attraction</h1>
           <p className="text-sm text-gray-400 dark:text-gray-500 mb-7">Add a place to visit in Vienna</p>
+
+          <OfflineFormBanner />
 
           <form action={handleSubmit} className="space-y-5">
             <div>
@@ -141,12 +144,7 @@ export default function NewAttractionPage() {
               >
                 Cancel
               </Link>
-              <button
-                type="submit"
-                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors"
-              >
-                Add to Trip ✈️
-              </button>
+              <NewAttractionSubmitButton />
             </div>
           </form>
         </div>

@@ -3,8 +3,9 @@
 import { useState, useTransition } from 'react';
 import { LogisticsPin, LogisticsPinCategory } from '@/lib/types';
 import { createPin, updatePin, deletePin } from '@/app/logistics/actions';
+import { useOnlineStatus } from '@/lib/useOnlineStatus';
 import { PIN_CATEGORY_META } from './PinCard';
-import { X, Trash2 } from 'lucide-react';
+import { X, Trash2, WifiOff } from 'lucide-react';
 
 const CATEGORIES = Object.keys(PIN_CATEGORY_META) as LogisticsPinCategory[];
 
@@ -25,9 +26,10 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
   });
   const [isPending, startTransition] = useTransition();
   const [isDeleting, setIsDeleting] = useState(false);
+  const isOnline = useOnlineStatus();
 
   const handleSave = () => {
-    if (!form.title.trim()) return;
+    if (!form.title.trim() || !isOnline) return;
     startTransition(async () => {
       if (isEditing) {
         await updatePin(pin.id, {
@@ -49,7 +51,7 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
   };
 
   const handleDelete = async () => {
-    if (!pin) return;
+    if (!pin || !isOnline) return;
     setIsDeleting(true);
     await deletePin(pin.id);
     onDeleted?.(pin.id);
@@ -75,6 +77,13 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
           </button>
         </div>
 
+        {!isOnline && (
+          <div className="flex items-center gap-2 px-6 py-2 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs">
+            <WifiOff size={13} className="shrink-0" />
+            You&apos;re offline — read-only until you&apos;re back online.
+          </div>
+        )}
+
         <div className="px-6 py-5 space-y-4">
           {/* Category */}
           <div>
@@ -88,7 +97,8 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
                   <label
                     key={cat}
                     className={[
-                      'flex items-center gap-2 px-3 py-2 border rounded-xl cursor-pointer text-xs font-medium transition-colors',
+                      'flex items-center gap-2 px-3 py-2 border rounded-xl text-xs font-medium transition-colors',
+                      isOnline ? 'cursor-pointer' : 'cursor-not-allowed opacity-60',
                       form.category === cat
                         ? `${meta.bg} ${meta.border} ${meta.text}`
                         : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300',
@@ -100,6 +110,7 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
                       value={cat}
                       checked={form.category === cat}
                       onChange={() => setForm((f) => ({ ...f, category: cat }))}
+                      disabled={!isOnline}
                       className="sr-only"
                     />
                     {meta.icon} {meta.label}
@@ -119,7 +130,8 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               placeholder="e.g. Vienna Airport → Hotel transfer"
-              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300 dark:placeholder-gray-600"
+              disabled={!isOnline}
+              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300 dark:placeholder-gray-600 disabled:cursor-not-allowed disabled:opacity-60"
             />
           </div>
 
@@ -133,7 +145,8 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
               onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
               rows={5}
               placeholder="Flight numbers, confirmation codes, addresses, links…"
-              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300 dark:placeholder-gray-600"
+              disabled={!isOnline}
+              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300 dark:placeholder-gray-600 disabled:cursor-not-allowed disabled:opacity-60"
             />
           </div>
         </div>
@@ -148,7 +161,7 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
             </button>
             <button
               onClick={handleSave}
-              disabled={isPending || isDeleting || !form.title.trim()}
+              disabled={isPending || isDeleting || !form.title.trim() || !isOnline}
               className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors"
             >
               {isPending ? 'Saving…' : isEditing ? 'Save Changes' : 'Add Pin'}
@@ -157,7 +170,7 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
           {isEditing && (
             <button
               onClick={handleDelete}
-              disabled={isDeleting || isPending}
+              disabled={isDeleting || isPending || !isOnline}
               className="flex w-full items-center justify-center gap-2 px-4 py-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-700 dark:hover:text-red-300 rounded-xl text-sm font-medium transition-colors disabled:opacity-40"
             >
               <Trash2 size={14} />

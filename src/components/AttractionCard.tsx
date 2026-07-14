@@ -30,15 +30,18 @@ interface AttractionCardProps {
   attraction: Attraction;
   onClick?: () => void;
   isOverlay?: boolean;
+  dragDisabled?: boolean;
 }
 
 export default function AttractionCard({
   attraction,
   onClick,
   isOverlay = false,
+  dragDisabled = false,
 }: AttractionCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: attraction.id,
+    disabled: dragDisabled,
   });
 
   const style = isOverlay
@@ -56,7 +59,7 @@ export default function AttractionCard({
       onClick={onClick}
       className={[
         'rounded-lg border text-sm select-none transition-shadow',
-        'cursor-grab active:cursor-grabbing',
+        dragDisabled ? 'cursor-default' : 'cursor-grab active:cursor-grabbing',
         colors.bg,
         colors.border,
         isDragging ? '' : 'shadow-sm hover:shadow-md',

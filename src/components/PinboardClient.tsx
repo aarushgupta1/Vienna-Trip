@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { LogisticsPin, LogisticsPinCategory } from '@/lib/types';
 import { LOGISTICS_CATEGORY_ORDER as CATEGORY_ORDER } from '@/lib/utils';
+import { useOnlineStatus } from '@/lib/useOnlineStatus';
 import PinCard, { PIN_CATEGORY_META } from './PinCard';
 import PinModal from './PinModal';
 import { Plus } from 'lucide-react';
@@ -19,6 +20,7 @@ export default function PinboardClient({ initialPins }: PinboardClientProps) {
     | null
   >(null);
   const [activeFilter, setActiveFilter] = useState<LogisticsPinCategory | null>(null);
+  const isOnline = useOnlineStatus();
 
   const filteredPins = activeFilter ? pins.filter((p) => p.category === activeFilter) : pins;
 
@@ -75,7 +77,9 @@ export default function PinboardClient({ initialPins }: PinboardClientProps) {
         })}
         <button
           onClick={() => setModalState({ mode: 'add' })}
-          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0"
+          disabled={!isOnline}
+          title={isOnline ? undefined : "Unavailable while offline"}
+          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0"
         >
           <Plus size={13} />
           Add Pin
@@ -93,7 +97,8 @@ export default function PinboardClient({ initialPins }: PinboardClientProps) {
             </p>
             <button
               onClick={() => setModalState({ mode: 'add' })}
-              className="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors"
+              disabled={!isOnline}
+              className="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-colors"
             >
               Add your first pin
             </button>

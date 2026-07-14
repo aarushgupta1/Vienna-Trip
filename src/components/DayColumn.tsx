@@ -128,9 +128,10 @@ interface DayColumnProps {
   travelSegments: Record<string, TravelSegment>;
   travelModes: Record<string, TravelMode>;
   onTravelModeChange: (pairKey: string, mode: TravelMode) => void;
+  readOnly?: boolean;
 }
 
-export default function DayColumn({ date, attractions, onAttractionClick, onTimeSlotClick, onAttractionResize, checkMode, checkedIds, onToggleCheck, travelSegments, travelModes, onTravelModeChange }: DayColumnProps) {
+export default function DayColumn({ date, attractions, onAttractionClick, onTimeSlotClick, onAttractionResize, checkMode, checkedIds, onToggleCheck, travelSegments, travelModes, onTravelModeChange, readOnly = false }: DayColumnProps) {
   const timedAttractions = attractions
     .filter((a) => a.start_time)
     .sort((a, b) => a.start_time!.localeCompare(b.start_time!));
@@ -143,6 +144,7 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
   onAttractionResizeRef.current = onAttractionResize;
 
   const handleGridClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (readOnly) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const y = e.clientY - rect.top;
     const rawMinutes = GRID_START_HOUR * 60 + y / PIXELS_PER_MINUTE;
@@ -152,6 +154,7 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
   };
 
   const startResize = (e: React.PointerEvent, a: Attraction) => {
+    if (readOnly) return;
     e.stopPropagation();
     e.preventDefault();
 
@@ -204,7 +207,7 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
 
   return (
     <div className="flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex-1 min-w-0" style={{ height: gridHeight }}>
-      <div className="relative flex-shrink-0 cursor-pointer" style={{ height: gridHeight }} onClick={handleGridClick}>
+      <div className={['relative flex-shrink-0', readOnly ? 'cursor-default' : 'cursor-pointer'].join(' ')} style={{ height: gridHeight }} onClick={handleGridClick}>
         {Array.from({ length: GRID_END_HOUR - GRID_START_HOUR }, (_, i) =>
           i === 0 ? null : (
             <div key={i} className="absolute w-full border-t border-gray-200 dark:border-gray-800 pointer-events-none" style={{ top: i * PIXELS_PER_HOUR }} />
@@ -227,15 +230,18 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
                 checkMode={checkMode}
                 isChecked={checkedIds.has(a.id)}
                 onToggleCheck={() => onToggleCheck(a.id)}
+                readOnly={readOnly}
               />
-              <div
-                className="absolute bottom-0 left-0 right-0 z-20 cursor-s-resize flex items-end justify-center pb-0.5"
-                style={{ height: Math.max(6, Math.min(16, height * 0.4)) }}
-                onPointerDown={(e) => startResize(e, a)}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="w-8 h-0.5 rounded-full bg-white/70 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
+              {!readOnly && (
+                <div
+                  className="absolute bottom-0 left-0 right-0 z-20 cursor-s-resize flex items-end justify-center pb-0.5"
+                  style={{ height: Math.max(6, Math.min(16, height * 0.4)) }}
+                  onPointerDown={(e) => startResize(e, a)}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="w-8 h-0.5 rounded-full bg-white/70 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              )}
             </div>
           );
         })}

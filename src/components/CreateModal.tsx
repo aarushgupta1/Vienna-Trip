@@ -6,10 +6,11 @@ import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull } fr
 import { createAttractionObject } from '@/app/actions';
 import { TICKET_IMAGE_EXTENSION_RE, uploadTicketFile } from '@/lib/tickets';
 import { minutesToTime, timeToMinutes, DEFAULT_DURATION_MINUTES, findTimeConflict } from '@/lib/timeUtils';
+import { useOnlineStatus } from '@/lib/useOnlineStatus';
 import LocationAutocomplete from './LocationAutocomplete';
 import TimeInput from './TimeInput';
 import ConfirmDialog from './ConfirmDialog';
-import { X, Upload, FileText } from 'lucide-react';
+import { X, Upload, FileText, WifiOff } from 'lucide-react';
 
 interface CreateModalProps {
   date: string;
@@ -37,6 +38,7 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
   const [conflictError, setConflictError] = useState<string | null>(null);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [ticketError, setTicketError] = useState<string | null>(null);
+  const isOnline = useOnlineStatus();
 
   const handleClose = () => {
     const hasChanges =
@@ -53,7 +55,7 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
   const categories = Object.keys(CATEGORY_LABELS) as Category[];
 
   const handleCreate = () => {
-    if (!form.name.trim()) return;
+    if (!form.name.trim() || !isOnline) return;
     if (form.scheduled_date && form.start_time) {
       const conflict = findTimeConflict(allAttractions, form.scheduled_date, form.start_time, form.end_time || null);
       if (conflict) {
@@ -108,6 +110,13 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
             <X size={17} />
           </button>
         </div>
+
+        {!isOnline && (
+          <div className="flex items-center gap-2 px-6 py-2 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs">
+            <WifiOff size={13} className="shrink-0" />
+            You&apos;re offline — new attractions can&apos;t be added until you&apos;re back online.
+          </div>
+        )}
 
         {/* Form */}
         <div className="px-6 py-5 space-y-4">
@@ -272,20 +281,22 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
                 );
               })}
 
-              <label className="flex items-center justify-center gap-1.5 px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                <Upload size={14} />
-                Add ticket
-                <input
-                  type="file"
-                  accept="image/*,application/pdf"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    e.target.value = '';
-                    if (file) setPendingTickets((prev) => [...prev, file]);
-                  }}
-                />
-              </label>
+              {isOnline && (
+                <label className="flex items-center justify-center gap-1.5 px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  <Upload size={14} />
+                  Add ticket
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = '';
+                      if (file) setPendingTickets((prev) => [...prev, file]);
+                    }}
+                  />
+                </label>
+              )}
               {ticketError && (
                 <p className="text-xs text-red-500 dark:text-red-400 font-medium">{ticketError}</p>
               )}
@@ -303,7 +314,7 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
           </button>
           <button
             onClick={handleCreate}
-            disabled={isPending || !form.name.trim()}
+            disabled={isPending || !form.name.trim() || !isOnline}
             className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors"
           >
             {isPending ? 'Adding…' : 'Add to trip'}

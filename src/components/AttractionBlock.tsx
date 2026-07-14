@@ -35,6 +35,7 @@ interface AttractionBlockProps {
   checkMode?: boolean;
   isChecked?: boolean;
   onToggleCheck?: () => void;
+  readOnly?: boolean;
 }
 
 export default function AttractionBlock({
@@ -46,9 +47,11 @@ export default function AttractionBlock({
   checkMode = false,
   isChecked = false,
   onToggleCheck,
+  readOnly = false,
 }: AttractionBlockProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: attraction.id,
+    disabled: readOnly,
   });
 
   const colors = CATEGORY_COLORS[attraction.category];
@@ -77,7 +80,7 @@ export default function AttractionBlock({
       onClick={(e) => { e.stopPropagation(); onClick?.(); }}
       className={[
         'rounded border overflow-hidden select-none transition-shadow flex flex-col w-full',
-        'cursor-grab active:cursor-grabbing',
+        readOnly ? 'cursor-default' : 'cursor-grab active:cursor-grabbing',
         colors.bg,
         colors.border,
         isDragging ? '' : 'shadow-sm hover:shadow-md',
@@ -90,7 +93,11 @@ export default function AttractionBlock({
           <div className={['absolute flex items-center', isShort ? 'top-0 right-0 gap-0' : 'top-0.5 right-0.5 gap-0.5'].join(' ')}>
             <button
               onClick={(e) => { e.stopPropagation(); onToggleCheck?.(); }}
-              className={['p-0.5 leading-none rounded-full transition-colors', isChecked ? 'text-green-500' : 'opacity-50 hover:opacity-80 ' + colors.text].join(' ')}
+              disabled={readOnly}
+              className={[
+                'p-0.5 leading-none rounded-full transition-colors disabled:cursor-not-allowed',
+                isChecked ? 'text-green-500' : 'opacity-50 ' + (readOnly ? '' : 'hover:opacity-80 ') + colors.text,
+              ].join(' ')}
             >
               {isChecked ? <CheckCircle2 size={isShort ? 15 : 18} /> : <Circle size={isShort ? 15 : 18} />}
             </button>
