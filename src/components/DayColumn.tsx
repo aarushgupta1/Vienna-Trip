@@ -161,10 +161,16 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
       ? timeToMinutes(a.end_time)
       : startMinutes + DEFAULT_DURATION_MINUTES;
 
+    // Cap growth at the start of whatever event comes next that day, so
+    // dragging down can't silently overlap it.
+    const index = timedAttractions.findIndex((x) => x.id === a.id);
+    const next = timedAttractions[index + 1];
+    const maxEndMinutes = next ? timeToMinutes(next.start_time!) : GRID_END_HOUR * 60;
+
     const snap = (clientY: number) => {
       const raw = origEndMinutes + (clientY - startY) / PIXELS_PER_MINUTE;
       const snapped = Math.round(raw / 15) * 15;
-      return Math.max(startMinutes + 15, Math.min(snapped, GRID_END_HOUR * 60));
+      return Math.max(startMinutes + 15, Math.min(snapped, maxEndMinutes));
     };
 
     const onMove = (ev: PointerEvent) => {
