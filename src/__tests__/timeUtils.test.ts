@@ -7,6 +7,7 @@ import {
   getDuration,
   findTimeConflict,
   generateTimeSlots,
+  parseTimeInput,
   PIXELS_PER_HOUR,
   PIXELS_PER_MINUTE,
   GRID_START_HOUR,
@@ -232,5 +233,39 @@ describe('generateTimeSlots', () => {
     for (let i = 1; i < slots.length; i++) {
       expect(slots[i].top).toBeGreaterThan(slots[i - 1].top);
     }
+  });
+});
+
+describe('parseTimeInput', () => {
+  it('parses HH:MM 24-hour input', () => {
+    expect(parseTimeInput('14:30')).toBe('14:30');
+    expect(parseTimeInput('09:05')).toBe('09:05');
+  });
+
+  it('parses compact digit input without a colon', () => {
+    expect(parseTimeInput('1430')).toBe('14:30');
+    expect(parseTimeInput('930')).toBe('09:30');
+    expect(parseTimeInput('9')).toBe('09:00');
+  });
+
+  it('parses input with am/pm suffixes', () => {
+    expect(parseTimeInput('9:30pm')).toBe('21:30');
+    expect(parseTimeInput('9:30 PM')).toBe('21:30');
+    expect(parseTimeInput('9:30am')).toBe('09:30');
+    expect(parseTimeInput('930a')).toBe('09:30');
+    expect(parseTimeInput('12pm')).toBe('12:00');
+    expect(parseTimeInput('12am')).toBe('00:00');
+  });
+
+  it('returns null for empty or unparseable input', () => {
+    expect(parseTimeInput('')).toBeNull();
+    expect(parseTimeInput('   ')).toBeNull();
+    expect(parseTimeInput('not a time')).toBeNull();
+  });
+
+  it('returns null for out-of-range values', () => {
+    expect(parseTimeInput('25:00')).toBeNull();
+    expect(parseTimeInput('12:75')).toBeNull();
+    expect(parseTimeInput('13pm')).toBeNull();
   });
 });

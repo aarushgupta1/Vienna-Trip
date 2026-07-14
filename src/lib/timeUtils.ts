@@ -66,6 +66,50 @@ export function findTimeConflict(
   }) ?? null;
 }
 
+// Parses flexible manual time entry (e.g. "930a", "9:30 pm", "21:30", "14")
+// into a 24-hour "HH:MM" string, or null if it can't be understood as a time.
+export function parseTimeInput(raw: string): string | null {
+  const trimmed = raw.trim().toLowerCase();
+  if (!trimmed) return null;
+
+  const meridiemMatch = trimmed.match(/^(.*?)\s*(am|pm|a|p)\.?$/);
+  const meridiem = meridiemMatch ? meridiemMatch[2] : null;
+  const body = (meridiemMatch ? meridiemMatch[1] : trimmed).trim();
+
+  let hour: number;
+  let minute: number;
+
+  const colonMatch = body.match(/^(\d{1,2})[:.](\d{1,2})$/);
+  if (colonMatch) {
+    hour = Number(colonMatch[1]);
+    minute = Number(colonMatch[2]);
+  } else if (/^\d{1,2}$/.test(body)) {
+    hour = Number(body);
+    minute = 0;
+  } else if (/^\d{3}$/.test(body)) {
+    hour = Number(body.slice(0, 1));
+    minute = Number(body.slice(1));
+  } else if (/^\d{4}$/.test(body)) {
+    hour = Number(body.slice(0, 2));
+    minute = Number(body.slice(2));
+  } else {
+    return null;
+  }
+
+  if (minute > 59) return null;
+
+  if (meridiem) {
+    if (hour < 1 || hour > 12) return null;
+    const isPM = meridiem.startsWith('p');
+    hour = hour % 12;
+    if (isPM) hour += 12;
+  } else if (hour > 23) {
+    return null;
+  }
+
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
 export function generateTimeSlots(date: string): Array<{ id: string; top: number }> {
   const slots: Array<{ id: string; top: number }> = [];
   for (let hour = GRID_START_HOUR; hour < GRID_END_HOUR; hour++) {

@@ -6,6 +6,7 @@ import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull, bui
 import { updateAttraction, deleteAttraction } from '@/app/actions';
 import { findTimeConflict } from '@/lib/timeUtils';
 import LocationAutocomplete from './LocationAutocomplete';
+import TimeInput from './TimeInput';
 import { X, Trash2, CalendarPlus } from 'lucide-react';
 
 interface EditModalProps {
@@ -138,22 +139,20 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
                 <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
                   Start time
                 </label>
-                <input
-                  type="time"
+                <TimeInput
                   value={form.start_time}
-                  onChange={(e) => { setConflictError(null); setForm((f) => ({ ...f, start_time: e.target.value })); }}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(v) => { setConflictError(null); setForm((f) => ({ ...f, start_time: v })); }}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
               <div>
                 <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
                   End time
                 </label>
-                <input
-                  type="time"
+                <TimeInput
                   value={form.end_time}
-                  onChange={(e) => { setConflictError(null); setForm((f) => ({ ...f, end_time: e.target.value })); }}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(v) => { setConflictError(null); setForm((f) => ({ ...f, end_time: v })); }}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
             </div>

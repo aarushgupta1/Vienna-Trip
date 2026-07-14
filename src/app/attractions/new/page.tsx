@@ -3,6 +3,7 @@ import { createAttraction } from '@/app/actions';
 import { generateTripDates, formatDateFull, CATEGORY_LABELS, CATEGORY_ICONS } from '@/lib/utils';
 import { Category } from '@/lib/types';
 import LocationAutocomplete from '@/components/LocationAutocomplete';
+import TimeInput from '@/components/TimeInput';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
@@ -67,20 +68,20 @@ export default function NewAttractionPage() {
                 <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
                   Start time
                 </label>
-                <input
+                <TimeInput
                   name="start_time"
-                  type="time"
-                  className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-800 dark:text-gray-100"
+                  defaultValue=""
+                  className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
                   End time
                 </label>
-                <input
+                <TimeInput
                   name="end_time"
-                  type="time"
-                  className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-800 dark:text-gray-100"
+                  defaultValue=""
+                  className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
             </div>
