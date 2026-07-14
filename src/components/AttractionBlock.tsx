@@ -62,6 +62,7 @@ export default function AttractionBlock({
       };
 
   const isShort = height !== undefined && height < 40;
+  const isTiny = height !== undefined && height < 24;
 
   return (
     <div
@@ -80,7 +81,7 @@ export default function AttractionBlock({
         onClick ? 'hover:brightness-95' : '',
       ].join(' ')}
     >
-      <div className="px-2 py-1.5 flex flex-col h-full min-h-0 relative">
+      <div className={['flex flex-col h-full min-h-0 relative', isTiny ? 'px-1.5 py-0.5' : 'px-2 py-1.5'].join(' ')}>
         {checkMode && !isOverlay && (
           <div className="absolute top-0.5 right-0.5 flex items-center gap-0.5">
             {attraction.scheduled_date && (
