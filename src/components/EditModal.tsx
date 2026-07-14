@@ -3,25 +3,13 @@
 import { useState, useTransition } from 'react';
 import { Attraction, Category } from '@/lib/types';
 import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull } from '@/lib/utils';
-import { updateAttraction, deleteAttraction, addTicketUrl, removeTicketUrl } from '@/app/actions';
-import { getSupabaseClient } from '@/lib/supabase';
+import { updateAttraction, deleteAttraction, removeTicketUrl } from '@/app/actions';
+import { TICKET_IMAGE_EXTENSION_RE, ticketFilename, uploadTicketFile } from '@/lib/tickets';
 import { findTimeConflict } from '@/lib/timeUtils';
 import LocationAutocomplete from './LocationAutocomplete';
 import TimeInput from './TimeInput';
 import ConfirmDialog from './ConfirmDialog';
 import { X, Trash2, Save, Upload, FileText } from 'lucide-react';
-
-const IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|heic|heif)$/i;
-
-function ticketFilename(url: string): string {
-  const last = url.split('/').pop() ?? 'Ticket';
-  const withoutTimestampPrefix = last.replace(/^\d+-/, '');
-  try {
-    return decodeURIComponent(withoutTimestampPrefix);
-  } catch {
-    return withoutTimestampPrefix;
-  }
-}
 
 interface EditModalProps {
   attraction: Attraction;
@@ -71,19 +59,10 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
 
   const handleTicketUpload = async (file: File) => {
     setTicketError(null);
-    const client = getSupabaseClient();
-    if (!client) {
-      setTicketError('Storage isn\'t configured.');
-      return;
-    }
     setUploadingTicket(true);
     try {
-      const path = `${attraction.id}/${Date.now()}-${file.name}`;
-      const { error: uploadError } = await client.storage.from('tickets').upload(path, file);
-      if (uploadError) throw uploadError;
-      const { data } = client.storage.from('tickets').getPublicUrl(path);
-      await addTicketUrl(attraction.id, data.publicUrl);
-      setTickets((prev) => [...prev, data.publicUrl]);
+      const url = await uploadTicketFile(attraction.id, file);
+      setTickets((prev) => [...prev, url]);
     } catch {
       setTicketError('Upload failed — try again.');
     } finally {
@@ -303,7 +282,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
             <div className="space-y-1.5">
               {tickets.map((url) => {
                 const filename = ticketFilename(url);
-                const isImage = IMAGE_EXTENSION_RE.test(filename);
+                const isImage = TICKET_IMAGE_EXTENSION_RE.test(filename);
                 return (
                   <div
                     key={url}

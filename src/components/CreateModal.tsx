@@ -4,11 +4,12 @@ import { useState, useTransition } from 'react';
 import { Attraction, Category } from '@/lib/types';
 import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull } from '@/lib/utils';
 import { createAttractionObject } from '@/app/actions';
+import { TICKET_IMAGE_EXTENSION_RE, uploadTicketFile } from '@/lib/tickets';
 import { minutesToTime, timeToMinutes, DEFAULT_DURATION_MINUTES, findTimeConflict } from '@/lib/timeUtils';
 import LocationAutocomplete from './LocationAutocomplete';
 import TimeInput from './TimeInput';
 import ConfirmDialog from './ConfirmDialog';
-import { X } from 'lucide-react';
+import { X, Upload, FileText } from 'lucide-react';
 
 interface CreateModalProps {
   date: string;
@@ -28,18 +29,19 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
     scheduled_date: date,
     start_time: startTime,
     end_time: defaultEndTime,
-    notes: '',
     location: '',
   };
   const [form, setForm] = useState(initialForm);
+  const [pendingTickets, setPendingTickets] = useState<File[]>([]);
   const [isPending, startTransition] = useTransition();
   const [conflictError, setConflictError] = useState<string | null>(null);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [ticketError, setTicketError] = useState<string | null>(null);
 
   const handleClose = () => {
-    const hasChanges = (Object.keys(initialForm) as (keyof typeof initialForm)[]).some(
-      (key) => form[key] !== initialForm[key]
-    );
+    const hasChanges =
+      (Object.keys(initialForm) as (keyof typeof initialForm)[]).some((key) => form[key] !== initialForm[key]) ||
+      pendingTickets.length > 0;
     if (hasChanges) {
       setShowDiscardConfirm(true);
       return;
@@ -60,6 +62,7 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
       }
     }
     setConflictError(null);
+    setTicketError(null);
     startTransition(async () => {
       const attraction = await createAttractionObject({
         name: form.name.trim(),
@@ -68,10 +71,21 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
         scheduled_date: form.scheduled_date || null,
         start_time: form.start_time || null,
         end_time: form.end_time || null,
-        notes: form.notes || null,
+        notes: null,
         location: form.location.trim() || null,
       });
-      onCreated(attraction);
+
+      let ticketUrls = attraction.ticket_urls;
+      if (pendingTickets.length > 0) {
+        try {
+          const uploaded = await Promise.all(pendingTickets.map((file) => uploadTicketFile(attraction.id, file)));
+          ticketUrls = [...ticketUrls, ...uploaded];
+        } catch {
+          setTicketError('Some tickets failed to upload — you can add them from the event afterward.');
+        }
+      }
+
+      onCreated({ ...attraction, ticket_urls: ticketUrls });
     });
   };
 
@@ -218,18 +232,64 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
             />
           </div>
 
-          {/* Notes */}
+          {/* Tickets */}
           <div>
             <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-              Notes & Tips
+              Tickets
             </label>
-            <textarea
-              value={form.notes}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-              rows={3}
-              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300 dark:placeholder-gray-600"
-              placeholder="Booking links, ticket prices, tips for the family..."
-            />
+            <div className="space-y-1.5">
+              {pendingTickets.map((file, i) => {
+                const isImage = TICKET_IMAGE_EXTENSION_RE.test(file.name);
+                return (
+                  <div
+                    key={`${file.name}-${i}`}
+                    className="flex items-center gap-2 px-2.5 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800"
+                  >
+                    {isImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt={file.name}
+                        className="w-9 h-9 rounded-lg object-cover border border-gray-200 dark:border-gray-700 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400 dark:text-gray-500 shrink-0">
+                        <FileText size={16} />
+                      </div>
+                    )}
+                    <span className="flex-1 min-w-0 truncate text-xs text-gray-600 dark:text-gray-300">
+                      {file.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPendingTickets((prev) => prev.filter((_, idx) => idx !== i))}
+                      className="shrink-0 p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                      title="Remove ticket"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                );
+              })}
+
+              <label className="flex items-center justify-center gap-1.5 px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                <Upload size={14} />
+                Add ticket
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    if (file) setPendingTickets((prev) => [...prev, file]);
+                  }}
+                />
+              </label>
+              {ticketError && (
+                <p className="text-xs text-red-500 dark:text-red-400 font-medium">{ticketError}</p>
+              )}
+            </div>
           </div>
         </div>
 
