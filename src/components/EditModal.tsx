@@ -7,6 +7,7 @@ import { updateAttraction, deleteAttraction } from '@/app/actions';
 import { findTimeConflict } from '@/lib/timeUtils';
 import LocationAutocomplete from './LocationAutocomplete';
 import TimeInput from './TimeInput';
+import ConfirmDialog from './ConfirmDialog';
 import { X, Trash2, CalendarPlus, Save } from 'lucide-react';
 
 interface EditModalProps {
@@ -32,12 +33,16 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
   const [isPending, startTransition] = useTransition();
   const [isDeleting, setIsDeleting] = useState(false);
   const [conflictError, setConflictError] = useState<string | null>(null);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
   const handleClose = () => {
     const hasChanges = (Object.keys(initialForm) as (keyof typeof initialForm)[]).some(
       (key) => form[key] !== initialForm[key]
     );
-    if (hasChanges && !window.confirm('Discard unsaved changes?')) return;
+    if (hasChanges) {
+      setShowDiscardConfirm(true);
+      return;
+    }
     onClose();
   };
 
@@ -237,19 +242,19 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
             <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
               Description & Notes
             </label>
-            <div className="space-y-2">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
               <textarea
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 rows={2}
-                className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300 dark:placeholder-gray-600"
+                className="w-full px-3.5 py-2.5 text-sm bg-transparent dark:text-gray-100 focus:outline-none resize-none placeholder-gray-300 dark:placeholder-gray-600"
                 placeholder="Brief description..."
               />
               <textarea
                 value={form.notes}
                 onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                 rows={2}
-                className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300 dark:placeholder-gray-600"
+                className="w-full px-3.5 py-2.5 text-sm bg-transparent dark:text-gray-100 focus:outline-none resize-none placeholder-gray-300 dark:placeholder-gray-600"
                 placeholder="Booking links, ticket prices, tips for the family..."
               />
             </div>
@@ -271,6 +276,14 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
           </div>
         )}
       </div>
+
+      {showDiscardConfirm && (
+        <ConfirmDialog
+          message="Discard unsaved changes?"
+          onConfirm={onClose}
+          onCancel={() => setShowDiscardConfirm(false)}
+        />
+      )}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { createAttractionObject } from '@/app/actions';
 import { minutesToTime, timeToMinutes, DEFAULT_DURATION_MINUTES, findTimeConflict } from '@/lib/timeUtils';
 import LocationAutocomplete from './LocationAutocomplete';
 import TimeInput from './TimeInput';
+import ConfirmDialog from './ConfirmDialog';
 import { X } from 'lucide-react';
 
 interface CreateModalProps {
@@ -33,12 +34,16 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
   const [form, setForm] = useState(initialForm);
   const [isPending, startTransition] = useTransition();
   const [conflictError, setConflictError] = useState<string | null>(null);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
   const handleClose = () => {
     const hasChanges = (Object.keys(initialForm) as (keyof typeof initialForm)[]).some(
       (key) => form[key] !== initialForm[key]
     );
-    if (hasChanges && !window.confirm('Discard unsaved changes?')) return;
+    if (hasChanges) {
+      setShowDiscardConfirm(true);
+      return;
+    }
     onClose();
   };
 
@@ -245,6 +250,14 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
           </button>
         </div>
       </div>
+
+      {showDiscardConfirm && (
+        <ConfirmDialog
+          message="Discard unsaved changes?"
+          onConfirm={onClose}
+          onCancel={() => setShowDiscardConfirm(false)}
+        />
+      )}
     </div>
   );
 }
