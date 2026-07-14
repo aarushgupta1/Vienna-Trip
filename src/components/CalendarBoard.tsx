@@ -55,8 +55,8 @@ function DayHeader({
               title={`${label}${weather.isForecast ? '' : ' (average)'} — Vienna`}
             >
               <span>{icon}</span>
-              <span className="font-medium">{weather.high}°F</span>
-              <span className="text-gray-300 dark:text-gray-600">/{weather.low}°F</span>
+              <span className="font-medium">{weather.high}°</span>
+              <span className="text-gray-300 dark:text-gray-600">/{weather.low}°</span>
               {!weather.isForecast && <span className="text-gray-300 dark:text-gray-600">~</span>}
             </div>
           );

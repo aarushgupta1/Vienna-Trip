@@ -20,7 +20,7 @@ interface CreateModalProps {
 export default function CreateModal({ date, startTime, allAttractions, onClose, onCreated }: CreateModalProps) {
   const defaultEndTime = minutesToTime(timeToMinutes(startTime) + DEFAULT_DURATION_MINUTES);
 
-  const [form, setForm] = useState({
+  const initialForm = {
     name: '',
     description: '',
     category: 'other' as Category,
@@ -29,9 +29,18 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
     end_time: defaultEndTime,
     notes: '',
     location: '',
-  });
+  };
+  const [form, setForm] = useState(initialForm);
   const [isPending, startTransition] = useTransition();
   const [conflictError, setConflictError] = useState<string | null>(null);
+
+  const handleClose = () => {
+    const hasChanges = (Object.keys(initialForm) as (keyof typeof initialForm)[]).some(
+      (key) => form[key] !== initialForm[key]
+    );
+    if (hasChanges && !window.confirm('Discard unsaved changes?')) return;
+    onClose();
+  };
 
   const tripDates = generateTripDates();
   const categories = Object.keys(CATEGORY_LABELS) as Category[];
@@ -64,7 +73,7 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
       <div
         className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
@@ -74,7 +83,7 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 rounded-t-2xl">
           <h2 className="font-bold text-gray-900 dark:text-gray-100">New Attraction</h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             <X size={17} />

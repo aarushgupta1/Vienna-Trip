@@ -18,7 +18,7 @@ interface EditModalProps {
 }
 
 export default function EditModal({ attraction, allAttractions, onClose, onSaved, onDeleted }: EditModalProps) {
-  const [form, setForm] = useState({
+  const initialForm = {
     name: attraction.name,
     description: attraction.description ?? '',
     category: attraction.category,
@@ -27,10 +27,19 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
     end_time: attraction.end_time ?? '',
     notes: attraction.notes ?? '',
     location: attraction.location ?? '',
-  });
+  };
+  const [form, setForm] = useState(initialForm);
   const [isPending, startTransition] = useTransition();
   const [isDeleting, setIsDeleting] = useState(false);
   const [conflictError, setConflictError] = useState<string | null>(null);
+
+  const handleClose = () => {
+    const hasChanges = (Object.keys(initialForm) as (keyof typeof initialForm)[]).some(
+      (key) => form[key] !== initialForm[key]
+    );
+    if (hasChanges && !window.confirm('Discard unsaved changes?')) return;
+    onClose();
+  };
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -81,7 +90,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
       <div
         className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
@@ -91,7 +100,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 rounded-t-2xl">
           <h2 className="font-bold text-gray-900 dark:text-gray-100">Edit Attraction</h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             <X size={17} />
@@ -235,21 +244,13 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
 
         {/* Footer */}
         <div className="px-6 pb-5 space-y-2">
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={isPending || isDeleting || !form.name.trim()}
-              className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors"
-            >
-              {isPending ? 'Saving…' : 'Save Changes'}
-            </button>
-          </div>
+          <button
+            onClick={handleSave}
+            disabled={isPending || isDeleting || !form.name.trim()}
+            className="flex w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors items-center justify-center"
+          >
+            {isPending ? 'Saving…' : 'Save Changes'}
+          </button>
           {form.scheduled_date && (
             <a
               href={buildGCalUrl(form.name || attraction.name, form.scheduled_date, form.start_time, form.end_time, form.description)}
