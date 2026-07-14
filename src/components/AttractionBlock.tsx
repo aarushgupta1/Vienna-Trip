@@ -53,11 +53,15 @@ export default function AttractionBlock({
 
   const colors = CATEGORY_COLORS[attraction.category];
 
+  // Checked events are "whitened out" via an opaque overlay inside the card
+  // (below) rather than CSS opacity on the whole element — opacity would
+  // make the card itself translucent and let the calendar's hour-grid lines
+  // behind it show through.
   const style = isOverlay
     ? { height: height ?? 'auto' }
     : {
         transform: CSS.Translate.toString(transform),
-        opacity: isDragging ? 0.25 : isChecked ? 0.45 : 1,
+        opacity: isDragging ? 0.25 : 1,
         height: height ?? 'auto',
       };
 
@@ -122,6 +126,10 @@ export default function AttractionBlock({
           <p className={['mt-0.5 text-[10px] opacity-50 line-clamp-2 leading-tight', colors.text].join(' ')}>
             {linkify(attraction.description)}
           </p>
+        )}
+
+        {isChecked && !isOverlay && (
+          <div className="absolute inset-0 bg-white/60 dark:bg-gray-950/60 pointer-events-none" />
         )}
       </div>
     </div>
