@@ -137,7 +137,7 @@ export default function TimeInput({ name, value, defaultValue, onChange, placeho
       </button>
       {name && <input type="hidden" name={name} value={storedValue} />}
       {open && (
-        <ul ref={listRef} className="absolute z-30 right-0 top-full mt-1 w-32 max-h-56 overflow-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1">
+        <ul ref={listRef} className="absolute z-30 right-0 top-full mt-1 w-32 max-h-[10.5rem] overflow-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1">
           {TIME_OPTIONS.map((opt) => (
             <li key={opt.value} data-value={opt.value}>
               <button
