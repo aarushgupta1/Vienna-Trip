@@ -82,8 +82,8 @@ export default function AttractionBlock({
       ].join(' ')}
     >
       <div className={['flex flex-col h-full min-h-0 relative', isTiny ? 'px-1.5 py-0.5' : 'px-2 py-1.5'].join(' ')}>
-        {checkMode && !isOverlay && (
-          <div className="absolute top-0.5 right-0.5 flex items-center gap-0.5">
+        {checkMode && !isOverlay && !isTiny && (
+          <div className={['absolute flex items-center', isShort ? 'top-0 right-0 gap-0' : 'top-0.5 right-0.5 gap-0.5'].join(' ')}>
             {attraction.scheduled_date && (
               <a
                 href={buildGCalUrl(attraction.name, attraction.scheduled_date, attraction.start_time ?? '', attraction.end_time ?? '', attraction.description ?? '')}
@@ -93,14 +93,14 @@ export default function AttractionBlock({
                 className={['p-0.5 leading-none rounded-full opacity-40 hover:opacity-80 transition-colors', colors.text].join(' ')}
                 title="Add to Google Calendar"
               >
-                <CalendarPlus size={14} />
+                <CalendarPlus size={isShort ? 12 : 14} />
               </a>
             )}
             <button
               onClick={(e) => { e.stopPropagation(); onToggleCheck?.(); }}
               className={['p-0.5 leading-none rounded-full transition-colors', isChecked ? 'text-green-500' : 'opacity-50 hover:opacity-80 ' + colors.text].join(' ')}
             >
-              {isChecked ? <CheckCircle2 size={18} /> : <Circle size={18} />}
+              {isChecked ? <CheckCircle2 size={isShort ? 15 : 18} /> : <Circle size={isShort ? 15 : 18} />}
             </button>
           </div>
         )}
