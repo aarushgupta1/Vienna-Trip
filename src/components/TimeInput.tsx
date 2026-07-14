@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Clock } from 'lucide-react';
 import { formatTime } from '@/lib/utils';
-import { parseTimeInput } from '@/lib/timeUtils';
+import { parseTimeInput, timeToMinutes } from '@/lib/timeUtils';
 
 interface TimeInputProps {
   name?: string;
@@ -22,6 +22,14 @@ const TIME_OPTIONS = Array.from({ length: (24 * 60) / STEP_MINUTES }, (_, i) => 
   return { value, label: formatTime(value) };
 });
 
+// Snaps an arbitrary "HH:MM" to the nearest option in the dropdown, so the
+// list can scroll to (and highlight) whatever the user has typed so far.
+function nearestOptionValue(hhmm: string): string {
+  const count = TIME_OPTIONS.length;
+  const idx = ((Math.round(timeToMinutes(hhmm) / STEP_MINUTES) % count) + count) % count;
+  return TIME_OPTIONS[idx].value;
+}
+
 export default function TimeInput({ name, value, defaultValue, onChange, placeholder, className }: TimeInputProps) {
   const isControlled = value !== undefined;
   const [internalValue, setInternalValue] = useState(defaultValue ?? '');
@@ -31,6 +39,21 @@ export default function TimeInput({ name, value, defaultValue, onChange, placeho
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+
+  // Best guess at the time the user means right now — from what they've typed,
+  // falling back to the current value — so the dropdown can scroll to it.
+  const liveGuess = text.trim() ? parseTimeInput(text) : (storedValue || null);
+  const nearestValue = liveGuess ? nearestOptionValue(liveGuess) : null;
+
+  useEffect(() => {
+    if (!open || !nearestValue) return;
+    const ul = listRef.current;
+    const el = ul?.querySelector<HTMLElement>(`[data-value="${nearestValue}"]`);
+    if (ul && el) {
+      ul.scrollTop = el.offsetTop - ul.clientHeight / 2 + el.offsetHeight / 2;
+    }
+  }, [open, nearestValue]);
 
   // Keep the displayed text in sync when the underlying value changes from outside
   // (e.g. another field resets it), but not while the user is actively typing.
@@ -111,15 +134,15 @@ export default function TimeInput({ name, value, defaultValue, onChange, placeho
       </button>
       {name && <input type="hidden" name={name} value={storedValue} />}
       {open && (
-        <ul className="absolute z-30 right-0 top-full mt-1 w-32 max-h-56 overflow-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1">
+        <ul ref={listRef} className="absolute z-30 right-0 top-full mt-1 w-32 max-h-56 overflow-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1">
           {TIME_OPTIONS.map((opt) => (
-            <li key={opt.value}>
+            <li key={opt.value} data-value={opt.value}>
               <button
                 type="button"
                 onClick={() => selectOption(opt.value)}
                 className={[
                   'w-full text-left px-3 py-1.5 text-sm transition-colors',
-                  opt.value === storedValue
+                  opt.value === nearestValue
                     ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-medium'
                     : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700',
                 ].join(' ')}
