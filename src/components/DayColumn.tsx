@@ -17,7 +17,7 @@ import {
 } from '@/lib/timeUtils';
 import { TravelSegment, TravelMode, segmentMinutes, formatDistance, isEstimatedMode } from '@/lib/travel';
 import AttractionBlock from './AttractionBlock';
-import { Footprints, Bus, Car, TrainFront } from 'lucide-react';
+import { Footprints, Bus, Car, TrainFront, ChevronDown } from 'lucide-react';
 
 const TRAVEL_MODE_ICON: Record<TravelMode, string> = {
   walk: '🚶',
@@ -66,12 +66,19 @@ function TravelBadge({
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
         title={(estimated ? 'Estimated from typical travel speeds' : 'Estimated driving time (real route)') + ' — click to change how you\'re getting there'}
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 text-gray-500 dark:text-gray-400 text-[9px] font-medium whitespace-nowrap shadow-sm transition-colors"
+        className={[
+          'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 pl-1.5 pr-1 py-0.5 rounded-full cursor-pointer',
+          'border text-[9px] font-medium whitespace-nowrap shadow-sm transition-colors',
+          open
+            ? 'bg-blue-100 dark:bg-blue-900/50 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300'
+            : 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:border-blue-300 dark:hover:border-blue-700',
+        ].join(' ')}
       >
         <span>{TRAVEL_MODE_ICON[mode]}</span>
         <span>{formatDistance(segment.distanceMeters)}</span>
-        <span className="text-gray-300 dark:text-gray-600">·</span>
+        <span className="opacity-50">·</span>
         <span>{estimated && '~'}{minutes != null ? `${minutes} min` : '—'}</span>
+        <ChevronDown size={9} className={['opacity-70 transition-transform', open ? 'rotate-180' : ''].join(' ')} />
       </button>
 
       {open && (
