@@ -66,13 +66,16 @@ export default function TimeInput({ name, value, defaultValue, onChange, placeho
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        // Just close the dropdown here — the input's own onBlur handler
+        // (fired right after this) parses and commits whatever was typed,
+        // or reverts it if it's not a valid time. Resetting text here too
+        // would race ahead of that and wipe out a valid typed value.
         setOpen(false);
-        setText(storedValue ? formatTime(storedValue) : '');
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [storedValue]);
+  }, []);
 
   const commit = (v: string) => {
     if (isControlled) onChange?.(v);
@@ -139,7 +142,7 @@ export default function TimeInput({ name, value, defaultValue, onChange, placeho
             <li key={opt.value} data-value={opt.value}>
               <button
                 type="button"
-                onClick={() => selectOption(opt.value)}
+                onClick={(e) => { e.stopPropagation(); selectOption(opt.value); }}
                 className={[
                   'w-full text-left px-3 py-1.5 text-sm transition-colors',
                   opt.value === nearestValue
