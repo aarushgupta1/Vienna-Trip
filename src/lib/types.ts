@@ -12,6 +12,7 @@ export interface Attraction {
   location: string | null; // free-text address, geocoded server-side into lat/lng
   lat: number | null;
   lng: number | null;
+  ticket_urls: string[]; // uploaded ticket files (images/PDFs) in Supabase Storage
   created_at: string;
 }
 

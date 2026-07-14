@@ -3,12 +3,25 @@
 import { useState, useTransition } from 'react';
 import { Attraction, Category } from '@/lib/types';
 import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull } from '@/lib/utils';
-import { updateAttraction, deleteAttraction } from '@/app/actions';
+import { updateAttraction, deleteAttraction, addTicketUrl, removeTicketUrl } from '@/app/actions';
+import { getSupabaseClient } from '@/lib/supabase';
 import { findTimeConflict } from '@/lib/timeUtils';
 import LocationAutocomplete from './LocationAutocomplete';
 import TimeInput from './TimeInput';
 import ConfirmDialog from './ConfirmDialog';
-import { X, Trash2, Save } from 'lucide-react';
+import { X, Trash2, Save, Upload, FileText } from 'lucide-react';
+
+const IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|heic|heif)$/i;
+
+function ticketFilename(url: string): string {
+  const last = url.split('/').pop() ?? 'Ticket';
+  const withoutTimestampPrefix = last.replace(/^\d+-/, '');
+  try {
+    return decodeURIComponent(withoutTimestampPrefix);
+  } catch {
+    return withoutTimestampPrefix;
+  }
+}
 
 interface EditModalProps {
   attraction: Attraction;
@@ -34,6 +47,9 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
   const [isDeleting, setIsDeleting] = useState(false);
   const [conflictError, setConflictError] = useState<string | null>(null);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [tickets, setTickets] = useState(attraction.ticket_urls ?? []);
+  const [uploadingTicket, setUploadingTicket] = useState(false);
+  const [ticketError, setTicketError] = useState<string | null>(null);
 
   const handleClose = () => {
     const hasChanges = (Object.keys(initialForm) as (keyof typeof initialForm)[]).some(
@@ -51,6 +67,33 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
     await deleteAttraction(attraction.id);
     onDeleted(attraction.id);
     onClose();
+  };
+
+  const handleTicketUpload = async (file: File) => {
+    setTicketError(null);
+    const client = getSupabaseClient();
+    if (!client) {
+      setTicketError('Storage isn\'t configured.');
+      return;
+    }
+    setUploadingTicket(true);
+    try {
+      const path = `${attraction.id}/${Date.now()}-${file.name}`;
+      const { error: uploadError } = await client.storage.from('tickets').upload(path, file);
+      if (uploadError) throw uploadError;
+      const { data } = client.storage.from('tickets').getPublicUrl(path);
+      await addTicketUrl(attraction.id, data.publicUrl);
+      setTickets((prev) => [...prev, data.publicUrl]);
+    } catch {
+      setTicketError('Upload failed — try again.');
+    } finally {
+      setUploadingTicket(false);
+    }
+  };
+
+  const handleTicketDelete = async (url: string) => {
+    setTickets((prev) => prev.filter((u) => u !== url));
+    await removeTicketUrl(attraction.id, url);
   };
   const tripDates = generateTripDates();
   const categories = Object.keys(CATEGORY_LABELS) as Category[];
@@ -250,6 +293,75 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
               className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-gray-300 dark:placeholder-gray-600"
               placeholder="Brief description..."
             />
+          </div>
+
+          {/* Tickets */}
+          <div>
+            <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+              Tickets
+            </label>
+            <div className="space-y-1.5">
+              {tickets.map((url) => {
+                const filename = ticketFilename(url);
+                const isImage = IMAGE_EXTENSION_RE.test(filename);
+                return (
+                  <div
+                    key={url}
+                    className="flex items-center gap-2 px-2.5 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800"
+                  >
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                      {isImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={url}
+                          alt={filename}
+                          className="w-9 h-9 rounded-lg object-cover border border-gray-200 dark:border-gray-700"
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400 dark:text-gray-500">
+                          <FileText size={16} />
+                        </div>
+                      )}
+                    </a>
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 min-w-0 truncate text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      {filename}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => handleTicketDelete(url)}
+                      className="shrink-0 p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                      title="Remove ticket"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                );
+              })}
+
+              <label className="flex items-center justify-center gap-1.5 px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                <Upload size={14} />
+                {uploadingTicket ? 'Uploading…' : 'Upload ticket'}
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  className="hidden"
+                  disabled={uploadingTicket}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    if (file) handleTicketUpload(file);
+                  }}
+                />
+              </label>
+              {ticketError && (
+                <p className="text-xs text-red-500 dark:text-red-400 font-medium">{ticketError}</p>
+              )}
+            </div>
           </div>
         </div>
       </div>

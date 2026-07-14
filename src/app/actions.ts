@@ -108,3 +108,42 @@ export async function deleteAttraction(id: string): Promise<void> {
   if (error) throw new Error(error.message);
   revalidatePath('/');
 }
+
+export async function addTicketUrl(id: string, url: string): Promise<void> {
+  const supabase = getSupabase();
+  const { data: row, error: fetchError } = await supabase
+    .from('attractions')
+    .select('ticket_urls')
+    .eq('id', id)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
+
+  const ticketUrls = [...((row?.ticket_urls as string[] | null) ?? []), url];
+  const { error } = await supabase.from('attractions').update({ ticket_urls: ticketUrls }).eq('id', id);
+  if (error) throw new Error(error.message);
+  revalidatePath('/');
+}
+
+export async function removeTicketUrl(id: string, url: string): Promise<void> {
+  const supabase = getSupabase();
+  const { data: row, error: fetchError } = await supabase
+    .from('attractions')
+    .select('ticket_urls')
+    .eq('id', id)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
+
+  const ticketUrls = ((row?.ticket_urls as string[] | null) ?? []).filter((u) => u !== url);
+  const { error } = await supabase.from('attractions').update({ ticket_urls: ticketUrls }).eq('id', id);
+  if (error) throw new Error(error.message);
+
+  // Best-effort: also remove the underlying file from storage.
+  const marker = '/storage/v1/object/public/tickets/';
+  const idx = url.indexOf(marker);
+  if (idx !== -1) {
+    const path = url.slice(idx + marker.length);
+    await supabase.storage.from('tickets').remove([path]);
+  }
+
+  revalidatePath('/');
+}

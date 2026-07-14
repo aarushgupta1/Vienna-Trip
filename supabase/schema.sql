@@ -22,6 +22,10 @@ alter table attractions add column if not exists location text;
 alter table attractions add column if not exists lat double precision;
 alter table attractions add column if not exists lng double precision;
 
+-- Uploaded ticket files (images/PDFs), stored as public URLs into the
+-- "tickets" storage bucket set up below.
+alter table attractions add column if not exists ticket_urls text[] not null default '{}';
+
 -- Enable Row Level Security
 alter table attractions enable row level security;
 
@@ -34,3 +38,13 @@ create policy "public_delete" on attractions for delete using (true);
 -- Enable Realtime (run once; also toggle the table on in the Supabase dashboard → Database → Replication)
 alter table attractions replica identity full;
 alter publication supabase_realtime add table attractions;
+
+-- Storage bucket for uploaded ticket files (images/PDFs), public read like
+-- the rest of this no-auth family app.
+insert into storage.buckets (id, name, public)
+values ('tickets', 'tickets', true)
+on conflict (id) do nothing;
+
+create policy "public_read_tickets" on storage.objects for select using (bucket_id = 'tickets');
+create policy "public_insert_tickets" on storage.objects for insert with check (bucket_id = 'tickets');
+create policy "public_delete_tickets" on storage.objects for delete using (bucket_id = 'tickets');
