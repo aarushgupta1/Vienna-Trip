@@ -81,7 +81,7 @@ export default function AttractionBlock({
       {...attributes}
       onClick={(e) => { e.stopPropagation(); onClick?.(); }}
       className={[
-        'rounded border overflow-hidden select-none transition-shadow flex flex-col w-full',
+        'rounded border overflow-hidden select-none touch-manipulation transition-shadow flex flex-col w-full',
         readOnly ? 'cursor-default' : 'cursor-grab active:cursor-grabbing',
         colors.bg,
         colors.border,

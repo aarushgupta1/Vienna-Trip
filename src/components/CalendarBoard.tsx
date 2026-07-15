@@ -8,7 +8,8 @@ import {
   pointerWithin,
   useSensor,
   useSensors,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
 } from '@dnd-kit/core';
 import { useState, useTransition, useEffect, useRef } from 'react';
 import { Attraction } from '@/lib/types';
@@ -215,7 +216,10 @@ export default function CalendarBoard({
   }, [currentPage]); // re-measure whenever the page (and thus column count) changes
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    // Touch requires a long press before a drag starts, so a normal swipe
+    // still scrolls the calendar instead of picking up the event underneath.
+    useSensor(TouchSensor, { activationConstraint: { delay: 1000, tolerance: 8 } })
   );
 
   const TRIP_DATES = generateTripDates();

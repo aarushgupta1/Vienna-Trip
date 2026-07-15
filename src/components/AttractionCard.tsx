@@ -58,7 +58,7 @@ export default function AttractionCard({
       {...attributes}
       onClick={onClick}
       className={[
-        'rounded-lg border text-sm select-none transition-shadow',
+        'rounded-lg border text-sm select-none touch-manipulation transition-shadow',
         dragDisabled ? 'cursor-default' : 'cursor-grab active:cursor-grabbing',
         colors.bg,
         colors.border,
