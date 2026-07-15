@@ -31,3 +31,15 @@ body {
     size: letter;
   }
 }
+
+/* iOS Safari zooms the whole page in when a focused text input renders
+   below 16px, and that zoom lingers after the input blurs (e.g. closing
+   the Add/Edit Attraction modal) — keep native form controls at 16px on
+   phone-width screens so focusing them never triggers it. */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
