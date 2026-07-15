@@ -219,7 +219,7 @@ export default function CalendarBoard({
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
     // Touch requires a long press before a drag starts, so a normal swipe
     // still scrolls the calendar instead of picking up the event underneath.
-    useSensor(TouchSensor, { activationConstraint: { delay: 1000, tolerance: 8 } })
+    useSensor(TouchSensor, { activationConstraint: { delay: 300, tolerance: 8 } })
   );
 
   const TRIP_DATES = generateTripDates();
