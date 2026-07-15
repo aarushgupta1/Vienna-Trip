@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LogisticsPin, LogisticsPinCategory } from '@/lib/types';
 import { LOGISTICS_CATEGORY_ORDER as CATEGORY_ORDER } from '@/lib/utils';
 import { useOnlineStatus } from '@/lib/useOnlineStatus';
+import { getSupabaseClient } from '@/lib/supabase';
 import PinCard, { PIN_CATEGORY_META } from './PinCard';
 import PinModal from './PinModal';
 import { Plus } from 'lucide-react';
@@ -21,6 +22,30 @@ export default function PinboardClient({ initialPins }: PinboardClientProps) {
   >(null);
   const [activeFilter, setActiveFilter] = useState<LogisticsPinCategory | null>(null);
   const isOnline = useOnlineStatus();
+
+  // Realtime: sync pins added/edited/deleted by other family members
+  useEffect(() => {
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    const channel = client
+      .channel('logistics-pins-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'logistics_pins' }, (payload: any) => {
+        const row = payload.new as LogisticsPin;
+        setPins((prev) => prev.find((p) => p.id === row.id) ? prev : [...prev, row]);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'logistics_pins' }, (payload: any) => {
+        const row = payload.new as LogisticsPin;
+        setPins((prev) => prev.map((p) => p.id === row.id ? row : p));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'logistics_pins' }, (payload: any) => {
+        const id = (payload.old as { id: string }).id;
+        setPins((prev) => prev.filter((p) => p.id !== id));
+      })
+      .subscribe();
+
+    return () => { client.removeChannel(channel); };
+  }, []);
 
   const filteredPins = activeFilter ? pins.filter((p) => p.category === activeFilter) : pins;
 

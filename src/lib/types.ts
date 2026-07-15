@@ -32,3 +32,9 @@ export interface LogisticsPin {
   content: string;
   created_at: string;
 }
+
+export interface DayNote {
+  date: string; // YYYY-MM-DD
+  note: string;
+  updated_at: string;
+}

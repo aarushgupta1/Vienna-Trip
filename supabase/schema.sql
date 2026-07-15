@@ -48,3 +48,45 @@ on conflict (id) do nothing;
 create policy "public_read_tickets" on storage.objects for select using (bucket_id = 'tickets');
 create policy "public_insert_tickets" on storage.objects for insert with check (bucket_id = 'tickets');
 create policy "public_delete_tickets" on storage.objects for delete using (bucket_id = 'tickets');
+
+-- Logistics pinboard. Already referenced by the app; included here so a
+-- fresh setup has it. If you already have this table, just run the
+-- "Enable Realtime" lines below for it.
+create table if not exists logistics_pins (
+  id         uuid primary key default gen_random_uuid(),
+  category   text not null default 'other'
+             check (category in ('flights', 'accommodation', 'transport', 'documents', 'contacts', 'budget', 'other')),
+  title      text not null,
+  content    text not null default '',
+  created_at timestamptz default now()
+);
+
+alter table logistics_pins enable row level security;
+
+create policy "public_select" on logistics_pins for select using (true);
+create policy "public_insert" on logistics_pins for insert with check (true);
+create policy "public_update" on logistics_pins for update using (true);
+create policy "public_delete" on logistics_pins for delete using (true);
+
+-- Enable Realtime (run once; also toggle the table on in the Supabase dashboard → Database → Replication)
+alter table logistics_pins replica identity full;
+alter publication supabase_realtime add table logistics_pins;
+
+-- Per-day notes on the calendar (previously localStorage-only, so they
+-- didn't sync across devices).
+create table if not exists day_notes (
+  date       date primary key,
+  note       text not null default '',
+  updated_at timestamptz default now()
+);
+
+alter table day_notes enable row level security;
+
+create policy "public_select" on day_notes for select using (true);
+create policy "public_insert" on day_notes for insert with check (true);
+create policy "public_update" on day_notes for update using (true);
+create policy "public_delete" on day_notes for delete using (true);
+
+-- Enable Realtime (run once; also toggle the table on in the Supabase dashboard → Database → Replication)
+alter table day_notes replica identity full;
+alter publication supabase_realtime add table day_notes;

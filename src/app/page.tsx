@@ -1,4 +1,4 @@
-import { getAttractions } from './actions';
+import { getAttractions, getDayNotes } from './actions';
 import CalendarBoard from '@/components/CalendarBoardClient';
 import ThemeToggle from '@/components/ThemeToggle';
 import { generateTripDates } from '@/lib/utils';
@@ -14,6 +14,7 @@ export default async function HomePage() {
   const attractions = await getAttractions();
   const weather = await getWeatherForDates(generateTripDates());
   const travelSegments = await getTravelSegments(attractions);
+  const dayNotes = await getDayNotes();
 
   return (
     <main className="h-dvh flex flex-col bg-gray-50 dark:bg-gray-950">
@@ -59,7 +60,12 @@ export default async function HomePage() {
       )}
 
       <div className="flex-1 overflow-hidden">
-        <CalendarBoard initialAttractions={attractions} weather={weather} travelSegments={travelSegments} />
+        <CalendarBoard
+          initialAttractions={attractions}
+          weather={weather}
+          travelSegments={travelSegments}
+          initialDayNotes={dayNotes}
+        />
       </div>
     </main>
   );

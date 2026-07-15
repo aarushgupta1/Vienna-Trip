@@ -2,7 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
-import { Attraction, Category } from '@/lib/types';
+import { Attraction, Category, DayNote } from '@/lib/types';
 import { geocodeAddress, searchLocations as searchLocationsGeo, GeocodeSuggestion } from '@/lib/geocode';
 
 function getSupabase() {
@@ -166,6 +166,32 @@ export async function removeTicketUrl(id: string, url: string): Promise<void> {
   if (idx !== -1) {
     const path = url.slice(idx + marker.length);
     await supabase.storage.from('tickets').remove([path]);
+  }
+
+  revalidatePath('/');
+}
+
+export async function getDayNotes(): Promise<Record<string, string>> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return {};
+  }
+
+  const { data, error } = await getSupabase().from('day_notes').select('date, note');
+  if (error) return {};
+  return Object.fromEntries(((data ?? []) as DayNote[]).map((row) => [row.date, row.note]));
+}
+
+export async function upsertDayNote(date: string, note: string): Promise<void> {
+  const supabase = getSupabase();
+
+  // Empty notes are deleted rather than stored, so the table doesn't fill
+  // up with blank rows for every day that's ever had its note cleared.
+  if (note.trim() === '') {
+    const { error } = await supabase.from('day_notes').delete().eq('date', date);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase.from('day_notes').upsert({ date, note }, { onConflict: 'date' });
+    if (error) throw new Error(error.message);
   }
 
   revalidatePath('/');

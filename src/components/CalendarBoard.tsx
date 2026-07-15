@@ -12,7 +12,7 @@ import {
   TouchSensor,
 } from '@dnd-kit/core';
 import { useState, useTransition, useEffect, useRef } from 'react';
-import { Attraction } from '@/lib/types';
+import { Attraction, DayNote } from '@/lib/types';
 import { generateTripDates, formatDate } from '@/lib/utils';
 import { DayWeather, weatherCodeInfo } from '@/lib/weather';
 import { TravelSegment, TravelMode } from '@/lib/travel';
@@ -27,7 +27,7 @@ import {
 } from '@/lib/timeUtils';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useOnlineStatus } from '@/lib/useOnlineStatus';
-import { updateAttraction } from '@/app/actions';
+import { updateAttraction, upsertDayNote } from '@/app/actions';
 import DayColumn from './DayColumn';
 import UnscheduledSidebar from './UnscheduledSidebar';
 import AttractionBlock from './AttractionBlock';
@@ -37,9 +37,14 @@ import TimeLabels from './TimeLabels';
 import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, WifiOff } from 'lucide-react';
 
 function DayHeader({
-  date, note, onNoteChange, weather,
+  date, note, onNoteChange, onNoteCommit, weather, readOnly,
 }: {
-  date: string; note: string; onNoteChange: (v: string) => void; weather?: DayWeather;
+  date: string;
+  note: string;
+  onNoteChange: (v: string) => void;
+  onNoteCommit: (v: string) => void;
+  weather?: DayWeather;
+  readOnly: boolean;
 }) {
   const { weekday, monthDay } = formatDate(date);
   const [editing, setEditing] = useState(false);
@@ -70,23 +75,26 @@ function DayHeader({
             autoFocus
             value={note}
             onChange={(e) => onNoteChange(e.target.value)}
-            onBlur={() => setEditing(false)}
+            onBlur={(e) => { setEditing(false); onNoteCommit(e.target.value); }}
             rows={2}
             placeholder="Notes for this day…"
             className="w-full text-[9px] text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-800 rounded px-1.5 py-1 outline-none resize-none leading-tight placeholder-gray-300 dark:placeholder-gray-600 shadow-sm"
           />
         ) : (
           <button
-            onClick={() => setEditing(true)}
-            className="group w-full text-left text-[9px] leading-tight rounded px-1.5 py-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            onClick={() => !readOnly && setEditing(true)}
+            disabled={readOnly}
+            className="group w-full text-left text-[9px] leading-tight rounded px-1.5 py-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:cursor-default disabled:hover:bg-transparent"
           >
             {note && (
               <span className="text-gray-500 dark:text-gray-400 whitespace-pre-wrap block mb-0.5">{note}</span>
             )}
-            <span className="flex items-center gap-1 text-gray-300 dark:text-gray-600 italic group-hover:text-gray-400 dark:group-hover:text-gray-500 transition-colors">
-              <Pencil size={8} />
-              + day notes
-            </span>
+            {!readOnly && (
+              <span className="flex items-center gap-1 text-gray-300 dark:text-gray-600 italic group-hover:text-gray-400 dark:group-hover:text-gray-500 transition-colors">
+                <Pencil size={8} />
+                + day notes
+              </span>
+            )}
           </button>
         )}
       </div>
@@ -98,10 +106,12 @@ export default function CalendarBoard({
   initialAttractions,
   weather,
   travelSegments,
+  initialDayNotes,
 }: {
   initialAttractions: Attraction[];
   weather: Record<string, DayWeather>;
   travelSegments: Record<string, TravelSegment>;
+  initialDayNotes: Record<string, string>;
 }) {
   const [attractions, setAttractions] = useState(initialAttractions);
   const [activeAttraction, setActiveAttraction] = useState<Attraction | null>(null);
@@ -120,14 +130,13 @@ export default function CalendarBoard({
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [timezone, setTimezone] = useState<'vienna' | 'eastern'>('vienna');
   const [travelModes, setTravelModes] = useState<Record<string, TravelMode>>({});
-  const [dayNotes, setDayNotes] = useState<Record<string, string>>({});
+  const [dayNotes, setDayNotes] = useState<Record<string, string>>(initialDayNotes);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [, startTransition] = useTransition();
   const isOnline = useOnlineStatus();
 
   useEffect(() => {
     try { setCheckedIds(new Set(JSON.parse(localStorage.getItem('vienna-checked') ?? '[]'))); } catch {}
-    try { setDayNotes(JSON.parse(localStorage.getItem('vienna-day-notes') ?? '{}')); } catch {}
     try { setTravelModes(JSON.parse(localStorage.getItem('vienna-travel-modes') ?? '{}')); } catch {}
   }, []);
 
@@ -157,10 +166,6 @@ export default function CalendarBoard({
   }, [checkedIds]);
 
   useEffect(() => {
-    localStorage.setItem('vienna-day-notes', JSON.stringify(dayNotes));
-  }, [dayNotes]);
-
-  useEffect(() => {
     localStorage.setItem('vienna-travel-modes', JSON.stringify(travelModes));
   }, [travelModes]);
 
@@ -188,6 +193,33 @@ export default function CalendarBoard({
     return () => { client.removeChannel(channel); };
   }, []);
 
+  // Realtime: sync day notes made by other family members
+  useEffect(() => {
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    const upsertNote = (payload: any) => {
+      const row = payload.new as DayNote;
+      setDayNotes((prev) => ({ ...prev, [row.date]: row.note }));
+    };
+
+    const channel = client
+      .channel('day-notes-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'day_notes' }, upsertNote)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'day_notes' }, upsertNote)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'day_notes' }, (payload: any) => {
+        const date = (payload.old as { date: string }).date;
+        setDayNotes((prev) => {
+          const next = { ...prev };
+          delete next[date];
+          return next;
+        });
+      })
+      .subscribe();
+
+    return () => { client.removeChannel(channel); };
+  }, []);
+
   const toggleChecked = (id: string) => {
     setCheckedIds((prev) => {
       const next = new Set(prev);
@@ -198,6 +230,12 @@ export default function CalendarBoard({
 
   const updateDayNote = (date: string, text: string) => {
     setDayNotes((prev) => ({ ...prev, [date]: text }));
+  };
+
+  const commitDayNote = (date: string, text: string) => {
+    startTransition(() => {
+      upsertDayNote(date, text);
+    });
   };
 
   const updateTravelMode = (pairKey: string, mode: TravelMode) => {
@@ -426,6 +464,8 @@ export default function CalendarBoard({
                   note={dayNotes[date] ?? ''}
                   weather={weather[date]}
                   onNoteChange={(v) => updateDayNote(date, v)}
+                  onNoteCommit={(v) => commitDayNote(date, v)}
+                  readOnly={!isOnline}
                 />
               ))}
             </div>

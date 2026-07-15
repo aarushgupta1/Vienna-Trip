@@ -11,6 +11,7 @@ export default function CalendarBoardClient(props: {
   initialAttractions: Attraction[];
   weather: Record<string, DayWeather>;
   travelSegments: Record<string, TravelSegment>;
+  initialDayNotes: Record<string, string>;
 }) {
   return <CalendarBoard {...props} />;
 }
