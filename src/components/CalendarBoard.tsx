@@ -113,7 +113,10 @@ export default function CalendarBoard({
   // Defaults assume desktop; the resize effect below corrects for the
   // actual viewport right after mount so this can render on the server.
   const [daysPerPage, setDaysPerPage] = useState(DAYS_PER_PAGE);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Starts closed: on mobile this is the correct resting state already (no
+  // open-then-slam-shut flash on mount), and on desktop the sidebar is always
+  // visible regardless of this flag (forced by `sm:translate-x-0` below).
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [timezone, setTimezone] = useState<'vienna' | 'eastern'>('vienna');
   const [travelModes, setTravelModes] = useState<Record<string, TravelMode>>({});
