@@ -18,6 +18,8 @@ import { DayWeather, weatherCodeInfo } from '@/lib/weather';
 import { TravelSegment, TravelMode } from '@/lib/travel';
 import {
   DAYS_PER_PAGE,
+  GRID_START_HOUR,
+  GRID_END_HOUR,
   getDuration,
   getEventHeight,
   timeToMinutes,
@@ -303,9 +305,17 @@ export default function CalendarBoard({
       const duration = attraction.start_time
         ? getDuration(attraction.start_time, attraction.end_time)
         : DEFAULT_DURATION_MINUTES;
+      // Preserve the event's full duration: if dropping here would push the
+      // end past the grid, slide the start back instead of shrinking it.
+      const gridEndMinutes = GRID_END_HOUR * 60;
+      const gridStartMinutes = GRID_START_HOUR * 60;
+      let startMinutes = timeToMinutes(time);
+      if (startMinutes + duration > gridEndMinutes) {
+        startMinutes = Math.max(gridStartMinutes, gridEndMinutes - duration);
+      }
       newDate = date;
-      newStartTime = time;
-      newEndTime = minutesToTime(Math.min(timeToMinutes(time) + duration, 23 * 60));
+      newStartTime = minutesToTime(startMinutes);
+      newEndTime = minutesToTime(startMinutes + duration);
     } else {
       newDate = overId; newStartTime = null; newEndTime = null;
     }
