@@ -29,6 +29,7 @@ import {
 } from '@/lib/timeUtils';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useOnlineStatus } from '@/lib/useOnlineStatus';
+import { getViennaNow, useNowInVienna } from '@/lib/viennaClock';
 import { updateAttraction, upsertDayNote } from '@/app/actions';
 import DayColumn from './DayColumn';
 import UnscheduledSidebar from './UnscheduledSidebar';
@@ -36,10 +37,15 @@ import AttractionBlock from './AttractionBlock';
 import EditModal from './EditModal';
 import CreateModal from './CreateModal';
 import TimeLabels from './TimeLabels';
-import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, WifiOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, WifiOff, CalendarDays } from 'lucide-react';
+
+function pageForDate(date: string, daysPerPage: number): number {
+  const idx = generateTripDates().indexOf(date);
+  return idx === -1 ? 0 : Math.floor(idx / daysPerPage);
+}
 
 function DayHeader({
-  date, note, onNoteChange, onNoteCommit, weather, readOnly,
+  date, note, onNoteChange, onNoteCommit, weather, readOnly, isToday,
 }: {
   date: string;
   note: string;
@@ -47,15 +53,25 @@ function DayHeader({
   onNoteCommit: (v: string) => void;
   weather?: DayWeather;
   readOnly: boolean;
+  isToday: boolean;
 }) {
   const { weekday, monthDay } = formatDate(date);
   const [editing, setEditing] = useState(false);
 
   return (
-    <div className="flex-1 border-l border-gray-100 dark:border-gray-800 first:border-l-0 flex flex-col">
+    <div
+      className={[
+        'flex-1 border-l border-gray-100 dark:border-gray-800 first:border-l-0 flex flex-col',
+        isToday ? 'bg-blue-50/60 dark:bg-blue-950/30' : '',
+      ].join(' ')}
+    >
       <div className="text-center pt-2 pb-1 px-1">
-        <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">{weekday}</div>
-        <div className="text-sm font-bold leading-snug text-gray-800 dark:text-gray-200">{monthDay}</div>
+        <div className={['text-[10px] font-bold uppercase tracking-wider', isToday ? 'text-blue-500 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'].join(' ')}>
+          {isToday ? 'Today' : weekday}
+        </div>
+        <div className={['text-sm font-bold leading-snug', isToday ? 'text-blue-700 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'].join(' ')}>
+          {monthDay}
+        </div>
         {weather && (() => {
           const { icon, label } = weatherCodeInfo(weather.code);
           return (
@@ -137,6 +153,11 @@ export default function CalendarBoard({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [, startTransition] = useTransition();
   const isOnline = useOnlineStatus();
+  const now = useNowInVienna();
+  // Tracks whether the initial "jump to today's page" has happened yet, so
+  // later window resizes fall back to the normal reset-to-page-0 behavior
+  // instead of yanking the user back to today every time they resize.
+  const hasJumpedToToday = useRef(false);
 
   useEffect(() => {
     try { setTravelModes(JSON.parse(localStorage.getItem('vienna-travel-modes') ?? '{}')); } catch {}
@@ -155,9 +176,17 @@ export default function CalendarBoard({
       const w = window.innerWidth;
       const next = w < 640 ? 1 : w < 1024 ? 2 : DAYS_PER_PAGE;
       setDaysPerPage((prev) => {
-        if (prev !== next) setCurrentPage(0);
+        if (!hasJumpedToToday.current) {
+          // On first load, open straight to whichever page today falls on
+          // (if today's within the trip) instead of always starting at
+          // page 1 — the whole point of this view is "what's happening now."
+          setCurrentPage(pageForDate(getViennaNow().date, next));
+        } else if (prev !== next) {
+          setCurrentPage(0);
+        }
         return next;
       });
+      hasJumpedToToday.current = true;
       setSidebarOpen(w >= 640);
     };
     update();
@@ -483,6 +512,18 @@ export default function CalendarBoard({
                 </button>
               </div>
 
+              {/* Jump to today — only relevant while the trip is actually underway */}
+              {now && generateTripDates().includes(now.date) && (
+                <button
+                  onClick={() => setCurrentPage(pageForDate(now.date, daysPerPage))}
+                  className="flex items-center gap-1.5 mr-1 px-2.5 py-1.5 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors"
+                  title="Jump to today"
+                >
+                  <CalendarDays size={13} />
+                  <span className="hidden sm:inline">Today</span>
+                </button>
+              )}
+
               {/* Timezone toggle */}
               <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-[11px] font-semibold">
                 <button
@@ -513,6 +554,7 @@ export default function CalendarBoard({
                   onNoteChange={(v) => updateDayNote(date, v)}
                   onNoteCommit={(v) => commitDayNote(date, v)}
                   readOnly={!isOnline}
+                  isToday={date === now?.date}
                 />
               ))}
             </div>
@@ -536,6 +578,7 @@ export default function CalendarBoard({
                   onTravelModeChange={updateTravelMode}
                   readOnly={!isOnline}
                   timezone={timezone}
+                  nowMinutes={date === now?.date ? now.minutes : null}
                 />
               ))}
             </div>

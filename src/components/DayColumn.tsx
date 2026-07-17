@@ -131,9 +131,12 @@ interface DayColumnProps {
   onTravelModeChange: (pairKey: string, mode: TravelMode) => void;
   readOnly?: boolean;
   timezone?: CalendarTimezone;
+  // Minutes-since-midnight (Vienna-local) for "right now", only passed in for
+  // whichever column is actually today — draws the current-time line.
+  nowMinutes?: number | null;
 }
 
-export default function DayColumn({ date, attractions, onAttractionClick, onTimeSlotClick, onAttractionResize, checkMode, checkedIds, onToggleCheck, travelSegments, travelModes, onTravelModeChange, readOnly = false, timezone = 'vienna' }: DayColumnProps) {
+export default function DayColumn({ date, attractions, onAttractionClick, onTimeSlotClick, onAttractionResize, checkMode, checkedIds, onToggleCheck, travelSegments, travelModes, onTravelModeChange, readOnly = false, timezone = 'vienna', nowMinutes = null }: DayColumnProps) {
   const timedAttractions = attractions
     .filter((a) => a.start_time)
     .sort((a, b) => a.start_time!.localeCompare(b.start_time!));
@@ -219,6 +222,16 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
         {timeSlots.map(({ id, top }) => (
           <TimeSlot key={id} id={id} top={top} />
         ))}
+
+        {nowMinutes != null && nowMinutes >= GRID_START_HOUR * 60 && nowMinutes <= GRID_END_HOUR * 60 && (
+          <div
+            className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
+            style={{ top: (nowMinutes - GRID_START_HOUR * 60) * PIXELS_PER_MINUTE }}
+          >
+            <div className="w-2 h-2 -ml-1 rounded-full bg-red-500 shrink-0" />
+            <div className="flex-1 h-px bg-red-500" />
+          </div>
+        )}
 
         {timedAttractions.map((a) => {
           const top = getEventTop(a.start_time!);
