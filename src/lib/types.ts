@@ -13,6 +13,7 @@ export interface Attraction {
   lat: number | null;
   lng: number | null;
   ticket_urls: string[]; // uploaded ticket files (images/PDFs) in Supabase Storage
+  is_checked: boolean; // shared checkmark state, synced across all users
   created_at: string;
 }
 

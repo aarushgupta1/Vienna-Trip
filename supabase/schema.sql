@@ -26,6 +26,12 @@ alter table attractions add column if not exists lng double precision;
 -- "tickets" storage bucket set up below.
 alter table attractions add column if not exists ticket_urls text[] not null default '{}';
 
+-- Whether someone has checked this event off. Shared across everyone (no
+-- per-user state) so one family member checking/unchecking an event is
+-- immediately reflected for everyone else via the realtime subscription
+-- already set up below for this table.
+alter table attractions add column if not exists is_checked boolean not null default false;
+
 -- Enable Row Level Security
 alter table attractions enable row level security;
 

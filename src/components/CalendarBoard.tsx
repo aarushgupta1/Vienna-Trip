@@ -11,7 +11,7 @@ import {
   MouseSensor,
   TouchSensor,
 } from '@dnd-kit/core';
-import { useState, useTransition, useEffect, useRef } from 'react';
+import { useState, useTransition, useEffect, useRef, useMemo } from 'react';
 import { Attraction, DayNote } from '@/lib/types';
 import { generateTripDates, formatDate } from '@/lib/utils';
 import { DayWeather, weatherCodeInfo } from '@/lib/weather';
@@ -129,7 +129,6 @@ export default function CalendarBoard({
   // open-then-slam-shut flash on mount), and on desktop the sidebar is always
   // visible regardless of this flag (forced by `sm:translate-x-0` below).
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [timezone, setTimezone] = useState<'vienna' | 'eastern'>('vienna');
   const [travelModes, setTravelModes] = useState<Record<string, TravelMode>>({});
   const [dayNotes, setDayNotes] = useState<Record<string, string>>(initialDayNotes);
@@ -138,9 +137,16 @@ export default function CalendarBoard({
   const isOnline = useOnlineStatus();
 
   useEffect(() => {
-    try { setCheckedIds(new Set(JSON.parse(localStorage.getItem('vienna-checked') ?? '[]'))); } catch {}
     try { setTravelModes(JSON.parse(localStorage.getItem('vienna-travel-modes') ?? '{}')); } catch {}
   }, []);
+
+  // Checked state lives on the attraction row itself (is_checked), synced via
+  // the same realtime subscription as the rest of the attraction, so everyone
+  // sees everyone else's checks/unchecks immediately — no localStorage.
+  const checkedIds = useMemo(
+    () => new Set(attractions.filter((a) => a.is_checked).map((a) => a.id)),
+    [attractions]
+  );
 
   useEffect(() => {
     const update = () => {
@@ -162,10 +168,6 @@ export default function CalendarBoard({
     const t = setTimeout(() => setConflictMsg(null), 3000);
     return () => clearTimeout(t);
   }, [conflictMsg]);
-
-  useEffect(() => {
-    localStorage.setItem('vienna-checked', JSON.stringify([...checkedIds]));
-  }, [checkedIds]);
 
   useEffect(() => {
     localStorage.setItem('vienna-travel-modes', JSON.stringify(travelModes));
@@ -223,10 +225,14 @@ export default function CalendarBoard({
   }, []);
 
   const toggleChecked = (id: string) => {
-    setCheckedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
+    const attraction = attractions.find((a) => a.id === id);
+    if (!attraction) return;
+    const isChecked = !attraction.is_checked;
+
+    setAttractions((prev) => prev.map((a) => (a.id === id ? { ...a, is_checked: isChecked } : a)));
+
+    startTransition(() => {
+      updateAttraction(id, { is_checked: isChecked });
     });
   };
 
