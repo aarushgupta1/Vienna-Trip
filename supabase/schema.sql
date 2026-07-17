@@ -96,3 +96,39 @@ create policy "public_delete" on day_notes for delete using (true);
 -- Enable Realtime (run once; also toggle the table on in the Supabase dashboard → Database → Replication)
 alter table day_notes replica identity full;
 alter publication supabase_realtime add table day_notes;
+
+-- Event reminders (Web Push). Each device that enables notifications stores
+-- one subscription here; the /api/send-event-reminders endpoint (triggered
+-- by a cron job — see supabase/reminders_cron.sql) reads all of them and
+-- pushes a "starts in 30 min" notification to every device at once. No
+-- realtime needed — these tables are only ever read/written server-side or
+-- written once by the subscribing device itself.
+create table if not exists push_subscriptions (
+  id         uuid primary key default gen_random_uuid(),
+  endpoint   text not null unique,
+  p256dh     text not null,
+  auth       text not null,
+  created_at timestamptz default now()
+);
+
+alter table push_subscriptions enable row level security;
+
+create policy "public_select" on push_subscriptions for select using (true);
+create policy "public_insert" on push_subscriptions for insert with check (true);
+create policy "public_update" on push_subscriptions for update using (true);
+create policy "public_delete" on push_subscriptions for delete using (true);
+
+-- Tracks which attractions have already had their 30-minutes-prior reminder
+-- sent, so repeated cron runs don't re-notify. Deleted automatically if the
+-- attraction is deleted; the app also clears a row here whenever that
+-- attraction's day/time changes, so a rescheduled event gets a fresh reminder.
+create table if not exists event_reminders_sent (
+  attraction_id uuid primary key references attractions(id) on delete cascade,
+  sent_at       timestamptz default now()
+);
+
+alter table event_reminders_sent enable row level security;
+
+create policy "public_select" on event_reminders_sent for select using (true);
+create policy "public_insert" on event_reminders_sent for insert with check (true);
+create policy "public_delete" on event_reminders_sent for delete using (true);

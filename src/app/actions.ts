@@ -99,12 +99,17 @@ export async function createAttractionObject(data: {
 }
 
 export async function scheduleAttraction(id: string, scheduledDate: string | null): Promise<void> {
-  const { error } = await getSupabase()
+  const supabase = getSupabase();
+  const { error } = await supabase
     .from('attractions')
     .update({ scheduled_date: scheduledDate })
     .eq('id', id);
 
   if (error) throw new Error(error.message);
+  // The day changed — clear any pending "reminder already sent" record so a
+  // rescheduled event gets a fresh 30-minutes-prior notification for its new
+  // slot instead of silently staying marked as already reminded.
+  await supabase.from('event_reminders_sent').delete().eq('attraction_id', id);
   revalidatePath('/');
 }
 
@@ -123,7 +128,27 @@ export async function updateAttraction(
     patch.lng = geo?.lng ?? null;
   }
 
-  const { error } = await getSupabase().from('attractions').update(patch).eq('id', id);
+  const supabase = getSupabase();
+
+  // Some callers (e.g. the edit form) always resend scheduled_date/start_time
+  // even when the user didn't touch them, so only clear the "already
+  // reminded" record if the day or start time is genuinely changing —
+  // otherwise every unrelated edit (description, notes, category…) would
+  // reset it and risk a duplicate notification.
+  if ('scheduled_date' in patch || 'start_time' in patch) {
+    const { data: current } = await supabase
+      .from('attractions')
+      .select('scheduled_date, start_time')
+      .eq('id', id)
+      .single();
+    const dateChanged = 'scheduled_date' in patch && patch.scheduled_date !== current?.scheduled_date;
+    const timeChanged = 'start_time' in patch && patch.start_time !== current?.start_time;
+    if (dateChanged || timeChanged) {
+      await supabase.from('event_reminders_sent').delete().eq('attraction_id', id);
+    }
+  }
+
+  const { error } = await supabase.from('attractions').update(patch).eq('id', id);
   if (error) throw new Error(error.message);
   revalidatePath('/');
 }
@@ -201,4 +226,18 @@ export async function upsertDayNote(date: string, note: string): Promise<void> {
   }
 
   revalidatePath('/');
+}
+
+// Registers (or re-registers) this device's push subscription so
+// /api/send-event-reminders can wake it with a "starts in 30 min"
+// notification. Upserted by endpoint since re-subscribing on the same device
+// yields the same endpoint most of the time.
+export async function savePushSubscription(sub: { endpoint: string; p256dh: string; auth: string }): Promise<void> {
+  const { error } = await getSupabase()
+    .from('push_subscriptions')
+    .upsert(
+      { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+      { onConflict: 'endpoint' }
+    );
+  if (error) throw new Error(error.message);
 }

@@ -1,34 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getViennaNow, ViennaNow } from './viennaTime';
 
-export interface ViennaNow {
-  date: string; // YYYY-MM-DD, Vienna-local calendar date
-  minutes: number; // minutes since midnight, Vienna-local time
-}
-
-// The calendar grid always represents Vienna wall-clock time regardless of
-// the VIE/ET display toggle (see shiftTime in utils.ts), so "today" and the
-// current-time line both need the real Vienna-local clock, not the browser's
-// local timezone.
-export function getViennaNow(): ViennaNow {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Europe/Vienna',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).formatToParts(new Date());
-
-  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '00';
-  const hour = Number(get('hour')) % 24; // Intl can render midnight as "24" with hour12: false
-  return {
-    date: `${get('year')}-${get('month')}-${get('day')}`,
-    minutes: hour * 60 + Number(get('minute')),
-  };
-}
+export type { ViennaNow };
+export { getViennaNow };
 
 // Starts `null` (rather than computing during the initial render) so the
 // server-rendered HTML and the client's first render always match — the

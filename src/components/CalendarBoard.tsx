@@ -30,6 +30,7 @@ import {
 import { getSupabaseClient } from '@/lib/supabase';
 import { useOnlineStatus } from '@/lib/useOnlineStatus';
 import { getViennaNow, useNowInVienna } from '@/lib/viennaClock';
+import { usePushNotifications } from '@/lib/pushNotifications';
 import { updateAttraction, upsertDayNote } from '@/app/actions';
 import DayColumn from './DayColumn';
 import UnscheduledSidebar from './UnscheduledSidebar';
@@ -37,7 +38,7 @@ import AttractionBlock from './AttractionBlock';
 import EditModal from './EditModal';
 import CreateModal from './CreateModal';
 import TimeLabels from './TimeLabels';
-import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, WifiOff, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, WifiOff, CalendarDays, Bell, BellRing, BellOff } from 'lucide-react';
 
 function pageForDate(date: string, daysPerPage: number): number {
   const idx = generateTripDates().indexOf(date);
@@ -158,6 +159,7 @@ export default function CalendarBoard({
   // later window resizes fall back to the normal reset-to-page-0 behavior
   // instead of yanking the user back to today every time they resize.
   const hasJumpedToToday = useRef(false);
+  const { permission: notifyPermission, enable: enablePushNotifications } = usePushNotifications();
 
   useEffect(() => {
     try { setTravelModes(JSON.parse(localStorage.getItem('vienna-travel-modes') ?? '{}')); } catch {}
@@ -522,6 +524,34 @@ export default function CalendarBoard({
                   <CalendarDays size={13} />
                   <span className="hidden sm:inline">Today</span>
                 </button>
+              )}
+
+              {/* Event reminders — offer to enable once; show a quiet status icon after that */}
+              {notifyPermission === 'default' && (
+                <button
+                  onClick={enablePushNotifications}
+                  className="flex items-center gap-1.5 mr-2 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  title="Get a notification 30 minutes before each event starts — delivered even if this app isn't open"
+                >
+                  <Bell size={13} />
+                  <span className="hidden sm:inline">Alerts</span>
+                </button>
+              )}
+              {notifyPermission === 'granted' && (
+                <span
+                  className="hidden sm:flex items-center mr-2 text-gray-300 dark:text-gray-600"
+                  title="You'll get a notification 30 minutes before each event starts, on this device — even if this app isn't open"
+                >
+                  <BellRing size={14} />
+                </span>
+              )}
+              {notifyPermission === 'denied' && (
+                <span
+                  className="hidden sm:flex items-center mr-2 text-gray-300 dark:text-gray-600"
+                  title="Notifications are blocked for this site — enable them in your browser's site settings to get 30-minute event alerts"
+                >
+                  <BellOff size={14} />
+                </span>
               )}
 
               {/* Timezone toggle */}
