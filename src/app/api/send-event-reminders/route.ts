@@ -46,9 +46,9 @@ interface SubscriptionRow {
 // Triggered on a schedule (see vercel.json or supabase/reminders_cron.sql —
 // Vercel's Hobby plan only allows daily cron, which isn't frequent enough
 // here, so Supabase's pg_cron is the more reliable option for most people).
-// Finds every scheduled, not-yet-checked-off attraction starting in the next
-// 30 minutes that hasn't already had a reminder sent, and pushes a
-// notification to every device that's enabled alerts.
+// Finds every scheduled attraction starting in the next 30 minutes that
+// hasn't already had a reminder sent, and pushes a notification to every
+// device that's enabled alerts.
 async function handleReminders(request: NextRequest) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -71,7 +71,6 @@ async function handleReminders(request: NextRequest) {
     .from('attractions')
     .select('id, name, location, scheduled_date, start_time')
     .eq('scheduled_date', now.date)
-    .eq('is_checked', false)
     .not('start_time', 'is', null);
 
   if (attractionsError) {

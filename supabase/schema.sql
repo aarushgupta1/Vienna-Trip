@@ -1,4 +1,9 @@
--- Run this in your Supabase project's SQL Editor
+-- Run this in your Supabase project's SQL Editor. Safe to re-run in full any
+-- time this file changes — every statement is idempotent: tables/columns use
+-- IF NOT EXISTS, policies are dropped before being recreated (Postgres has
+-- no CREATE POLICY IF NOT EXISTS), and adding a table to the realtime
+-- publication is wrapped to ignore "already a member" errors (no ADD TABLE
+-- IF NOT EXISTS for publications either).
 
 create table if not exists attractions (
   id           uuid primary key default gen_random_uuid(),
@@ -26,16 +31,18 @@ alter table attractions add column if not exists lng double precision;
 -- "tickets" storage bucket set up below.
 alter table attractions add column if not exists ticket_urls text[] not null default '{}';
 
--- Whether someone has checked this event off. Shared across everyone (no
--- per-user state) so one family member checking/unchecking an event is
--- immediately reflected for everyone else via the realtime subscription
--- already set up below for this table.
-alter table attractions add column if not exists is_checked boolean not null default false;
+-- The per-event checkmark feature was removed — drops the column from any
+-- database that still has it from before. Safe to re-run either way.
+alter table attractions drop column if exists is_checked;
 
 -- Enable Row Level Security
 alter table attractions enable row level security;
 
 -- Allow full public access (no auth — shared family app)
+drop policy if exists "public_select" on attractions;
+drop policy if exists "public_insert" on attractions;
+drop policy if exists "public_update" on attractions;
+drop policy if exists "public_delete" on attractions;
 create policy "public_select" on attractions for select using (true);
 create policy "public_insert" on attractions for insert with check (true);
 create policy "public_update" on attractions for update using (true);
@@ -43,7 +50,10 @@ create policy "public_delete" on attractions for delete using (true);
 
 -- Enable Realtime (run once; also toggle the table on in the Supabase dashboard → Database → Replication)
 alter table attractions replica identity full;
-alter publication supabase_realtime add table attractions;
+do $$ begin
+  alter publication supabase_realtime add table attractions;
+exception when duplicate_object then null; -- already added — fine on a re-run
+end $$;
 
 -- Storage bucket for uploaded ticket files (images/PDFs), public read like
 -- the rest of this no-auth family app.
@@ -51,6 +61,9 @@ insert into storage.buckets (id, name, public)
 values ('tickets', 'tickets', true)
 on conflict (id) do nothing;
 
+drop policy if exists "public_read_tickets" on storage.objects;
+drop policy if exists "public_insert_tickets" on storage.objects;
+drop policy if exists "public_delete_tickets" on storage.objects;
 create policy "public_read_tickets" on storage.objects for select using (bucket_id = 'tickets');
 create policy "public_insert_tickets" on storage.objects for insert with check (bucket_id = 'tickets');
 create policy "public_delete_tickets" on storage.objects for delete using (bucket_id = 'tickets');
@@ -69,6 +82,10 @@ create table if not exists logistics_pins (
 
 alter table logistics_pins enable row level security;
 
+drop policy if exists "public_select" on logistics_pins;
+drop policy if exists "public_insert" on logistics_pins;
+drop policy if exists "public_update" on logistics_pins;
+drop policy if exists "public_delete" on logistics_pins;
 create policy "public_select" on logistics_pins for select using (true);
 create policy "public_insert" on logistics_pins for insert with check (true);
 create policy "public_update" on logistics_pins for update using (true);
@@ -76,7 +93,10 @@ create policy "public_delete" on logistics_pins for delete using (true);
 
 -- Enable Realtime (run once; also toggle the table on in the Supabase dashboard → Database → Replication)
 alter table logistics_pins replica identity full;
-alter publication supabase_realtime add table logistics_pins;
+do $$ begin
+  alter publication supabase_realtime add table logistics_pins;
+exception when duplicate_object then null; -- already added — fine on a re-run
+end $$;
 
 -- Per-day notes on the calendar (previously localStorage-only, so they
 -- didn't sync across devices).
@@ -88,6 +108,10 @@ create table if not exists day_notes (
 
 alter table day_notes enable row level security;
 
+drop policy if exists "public_select" on day_notes;
+drop policy if exists "public_insert" on day_notes;
+drop policy if exists "public_update" on day_notes;
+drop policy if exists "public_delete" on day_notes;
 create policy "public_select" on day_notes for select using (true);
 create policy "public_insert" on day_notes for insert with check (true);
 create policy "public_update" on day_notes for update using (true);
@@ -95,7 +119,10 @@ create policy "public_delete" on day_notes for delete using (true);
 
 -- Enable Realtime (run once; also toggle the table on in the Supabase dashboard → Database → Replication)
 alter table day_notes replica identity full;
-alter publication supabase_realtime add table day_notes;
+do $$ begin
+  alter publication supabase_realtime add table day_notes;
+exception when duplicate_object then null; -- already added — fine on a re-run
+end $$;
 
 -- Event reminders (Web Push). Each device that enables notifications stores
 -- one subscription here; the /api/send-event-reminders endpoint (triggered
@@ -113,6 +140,10 @@ create table if not exists push_subscriptions (
 
 alter table push_subscriptions enable row level security;
 
+drop policy if exists "public_select" on push_subscriptions;
+drop policy if exists "public_insert" on push_subscriptions;
+drop policy if exists "public_update" on push_subscriptions;
+drop policy if exists "public_delete" on push_subscriptions;
 create policy "public_select" on push_subscriptions for select using (true);
 create policy "public_insert" on push_subscriptions for insert with check (true);
 create policy "public_update" on push_subscriptions for update using (true);
@@ -129,6 +160,9 @@ create table if not exists event_reminders_sent (
 
 alter table event_reminders_sent enable row level security;
 
+drop policy if exists "public_select" on event_reminders_sent;
+drop policy if exists "public_insert" on event_reminders_sent;
+drop policy if exists "public_delete" on event_reminders_sent;
 create policy "public_select" on event_reminders_sent for select using (true);
 create policy "public_insert" on event_reminders_sent for insert with check (true);
 create policy "public_delete" on event_reminders_sent for delete using (true);

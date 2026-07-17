@@ -123,9 +123,6 @@ interface DayColumnProps {
   onAttractionClick: (a: Attraction) => void;
   onTimeSlotClick: (date: string, time: string) => void;
   onAttractionResize: (id: string, newEndTime: string) => void;
-  checkMode: boolean;
-  checkedIds: Set<string>;
-  onToggleCheck: (id: string) => void;
   travelSegments: Record<string, TravelSegment>;
   travelModes: Record<string, TravelMode>;
   onTravelModeChange: (pairKey: string, mode: TravelMode) => void;
@@ -136,7 +133,7 @@ interface DayColumnProps {
   nowMinutes?: number | null;
 }
 
-export default function DayColumn({ date, attractions, onAttractionClick, onTimeSlotClick, onAttractionResize, checkMode, checkedIds, onToggleCheck, travelSegments, travelModes, onTravelModeChange, readOnly = false, timezone = 'vienna', nowMinutes = null }: DayColumnProps) {
+export default function DayColumn({ date, attractions, onAttractionClick, onTimeSlotClick, onAttractionResize, travelSegments, travelModes, onTravelModeChange, readOnly = false, timezone = 'vienna', nowMinutes = null }: DayColumnProps) {
   const timedAttractions = attractions
     .filter((a) => a.start_time)
     .sort((a, b) => a.start_time!.localeCompare(b.start_time!));
@@ -242,9 +239,6 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
                 attraction={a}
                 height={height}
                 onClick={() => onAttractionClick(a)}
-                checkMode={checkMode}
-                isChecked={checkedIds.has(a.id)}
-                onToggleCheck={() => onToggleCheck(a.id)}
                 readOnly={readOnly}
                 timezone={timezone}
               />

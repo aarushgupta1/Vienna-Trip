@@ -115,7 +115,7 @@ export async function scheduleAttraction(id: string, scheduledDate: string | nul
 
 export async function updateAttraction(
   id: string,
-  data: Partial<Pick<Attraction, 'name' | 'description' | 'category' | 'scheduled_date' | 'start_time' | 'end_time' | 'notes' | 'location' | 'is_checked'>>
+  data: Partial<Pick<Attraction, 'name' | 'description' | 'category' | 'scheduled_date' | 'start_time' | 'end_time' | 'notes' | 'location'>>
 ): Promise<void> {
   // Callers only pass `location` when it actually changed, so re-geocoding
   // here doesn't fire on every unrelated edit (e.g. just moving the time).

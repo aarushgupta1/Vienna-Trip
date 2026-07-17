@@ -11,7 +11,7 @@ import {
   MouseSensor,
   TouchSensor,
 } from '@dnd-kit/core';
-import { useState, useTransition, useEffect, useRef, useMemo } from 'react';
+import { useState, useTransition, useEffect, useRef } from 'react';
 import { Attraction, DayNote } from '@/lib/types';
 import { generateTripDates, formatDate } from '@/lib/utils';
 import { DayWeather, weatherCodeInfo } from '@/lib/weather';
@@ -165,14 +165,6 @@ export default function CalendarBoard({
     try { setTravelModes(JSON.parse(localStorage.getItem('vienna-travel-modes') ?? '{}')); } catch {}
   }, []);
 
-  // Checked state lives on the attraction row itself (is_checked), synced via
-  // the same realtime subscription as the rest of the attraction, so everyone
-  // sees everyone else's checks/unchecks immediately — no localStorage.
-  const checkedIds = useMemo(
-    () => new Set(attractions.filter((a) => a.is_checked).map((a) => a.id)),
-    [attractions]
-  );
-
   useEffect(() => {
     const update = () => {
       const w = window.innerWidth;
@@ -256,25 +248,6 @@ export default function CalendarBoard({
 
     return () => { client.removeChannel(channel); };
   }, []);
-
-  const toggleChecked = (id: string) => {
-    const attraction = attractions.find((a) => a.id === id);
-    if (!attraction) return;
-    const isChecked = !attraction.is_checked;
-
-    setAttractions((prev) => prev.map((a) => (a.id === id ? { ...a, is_checked: isChecked } : a)));
-
-    startTransition(async () => {
-      try {
-        await updateAttraction(id, { is_checked: isChecked });
-      } catch {
-        // Roll back — otherwise this device shows a check that never made it
-        // to the database, and everyone else's view disagrees with it.
-        setAttractions((prev) => prev.map((a) => (a.id === id ? { ...a, is_checked: !isChecked } : a)));
-        setToastMsg("Couldn't update — check your connection and try again.");
-      }
-    });
-  };
 
   const updateDayNote = (date: string, text: string) => {
     setDayNotes((prev) => ({ ...prev, [date]: text }));
@@ -600,9 +573,6 @@ export default function CalendarBoard({
                   onAttractionClick={setEditingAttraction}
                   onTimeSlotClick={(d, t) => setCreateSlot({ date: d, time: t })}
                   onAttractionResize={handleAttractionResize}
-                  checkMode={true}
-                  checkedIds={checkedIds}
-                  onToggleCheck={toggleChecked}
                   travelSegments={travelSegments}
                   travelModes={travelModes}
                   onTravelModeChange={updateTravelMode}

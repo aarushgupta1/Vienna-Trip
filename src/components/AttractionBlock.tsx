@@ -4,7 +4,7 @@ import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { Attraction } from '@/lib/types';
 import { CATEGORY_COLORS, CATEGORY_ICONS, formatTimeInZone, CalendarTimezone } from '@/lib/utils';
-import { Clock, Circle, CheckCircle2 } from 'lucide-react';
+import { Clock } from 'lucide-react';
 
 function linkify(text: string) {
   const parts = text.split(/(https?:\/\/[^\s]+)/g);
@@ -32,9 +32,6 @@ interface AttractionBlockProps {
   onClick?: () => void;
   isCompact?: boolean;
   isOverlay?: boolean;
-  checkMode?: boolean;
-  isChecked?: boolean;
-  onToggleCheck?: () => void;
   readOnly?: boolean;
   timezone?: CalendarTimezone;
 }
@@ -45,9 +42,6 @@ export default function AttractionBlock({
   onClick,
   isCompact = false,
   isOverlay = false,
-  checkMode = false,
-  isChecked = false,
-  onToggleCheck,
   readOnly = false,
   timezone = 'vienna',
 }: AttractionBlockProps) {
@@ -58,10 +52,6 @@ export default function AttractionBlock({
 
   const colors = CATEGORY_COLORS[attraction.category];
 
-  // Checked events are "whitened out" via an opaque overlay inside the card
-  // (below) rather than CSS opacity on the whole element — opacity would
-  // make the card itself translucent and let the calendar's hour-grid lines
-  // behind it show through.
   const style = isOverlay
     ? { height: height ?? 'auto' }
     : {
@@ -91,20 +81,6 @@ export default function AttractionBlock({
       ].join(' ')}
     >
       <div className={['flex flex-col h-full min-h-0 relative', isTiny ? 'px-1.5 py-0.5' : 'px-2 py-1.5'].join(' ')}>
-        {checkMode && !isOverlay && !isTiny && (
-          <div className={['absolute flex items-center', isShort ? 'top-0 right-0 gap-0' : 'top-0.5 right-0.5 gap-0.5'].join(' ')}>
-            <button
-              onClick={(e) => { e.stopPropagation(); onToggleCheck?.(); }}
-              disabled={readOnly}
-              className={[
-                'p-0.5 leading-none rounded-full transition-colors disabled:cursor-not-allowed',
-                isChecked ? 'text-green-500' : 'opacity-50 ' + (readOnly ? '' : 'hover:opacity-80 ') + colors.text,
-              ].join(' ')}
-            >
-              {isChecked ? <CheckCircle2 size={isShort ? 15 : 18} /> : <Circle size={isShort ? 15 : 18} />}
-            </button>
-          </div>
-        )}
         <span className={['font-semibold truncate leading-tight', isShort ? 'text-[10px]' : 'text-xs', colors.text].join(' ')}>
           {CATEGORY_ICONS[attraction.category]} {attraction.name}
         </span>
@@ -123,10 +99,6 @@ export default function AttractionBlock({
           <p className={['mt-0.5 text-[10px] opacity-50 line-clamp-2 leading-tight', colors.text].join(' ')}>
             {linkify(attraction.description)}
           </p>
-        )}
-
-        {isChecked && !isOverlay && (
-          <div className="absolute inset-0 bg-white/60 dark:bg-gray-950/60 pointer-events-none" />
         )}
       </div>
     </div>
