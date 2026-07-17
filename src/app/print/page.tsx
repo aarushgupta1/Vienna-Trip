@@ -1,4 +1,4 @@
-import { getAttractions } from '../actions';
+import { getAttractions, getDayNotes } from '../actions';
 import { getPins } from '../logistics/actions';
 import {
   generateTripDates,
@@ -99,6 +99,7 @@ function PinRow({ pin }: { pin: LogisticsPin }) {
 export default async function PrintPage() {
   const attractions = await getAttractions();
   const pins = await getPins();
+  const dayNotes = await getDayNotes();
   const travelSegments = await getTravelSegments(attractions);
   const dates = generateTripDates();
 
@@ -177,6 +178,11 @@ export default async function PrintPage() {
                 <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
                   {formatDateFull(date)}
                 </h3>
+                {dayNotes[date] && (
+                  <p className="text-xs text-gray-500 italic mb-2 pl-32 whitespace-pre-wrap leading-relaxed">
+                    {dayNotes[date]}
+                  </p>
+                )}
                 {events.length === 0 ? (
                   <p className="text-sm text-gray-300 italic pl-32">Nothing scheduled</p>
                 ) : (
