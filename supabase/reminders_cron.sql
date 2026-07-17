@@ -25,9 +25,9 @@ select cron.schedule(
   '*/10 * * * *',
   $$
   select net.http_post(
-    url := '<YOUR-DEPLOYED-URL>/api/send-event-reminders',
+    url := 'https://vienna-trip-jki7.vercel.app//api/send-event-reminders',
     headers := jsonb_build_object(
-      'Authorization', 'Bearer <YOUR-CRON-SECRET>',
+      'Authorization', 'Bearer 21d80c3ff7a387b943c1643cad084eb147c897e77653fdbf',
       'Content-Type', 'application/json'
     ),
     body := '{}'::jsonb
