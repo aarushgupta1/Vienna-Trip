@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist } from 'next/font/google';
 import './globals.css';
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
@@ -8,6 +8,9 @@ const geist = Geist({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Vienna Trip Planner',
   description: 'Family itinerary planner for our Vienna vacation, Aug 6–16 2026',
+};
+
+export const viewport: Viewport = {
   themeColor: '#2563eb',
 };
 
