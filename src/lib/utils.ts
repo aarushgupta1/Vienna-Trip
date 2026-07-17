@@ -177,3 +177,17 @@ export function shiftTime(timeStr: string, timezone: CalendarTimezone): string {
 export function formatTimeInZone(timeStr: string, timezone: CalendarTimezone): string {
   return formatTime(shiftTime(timeStr, timezone));
 }
+
+// Google's "universal" maps link — works cross-platform (opens the native
+// Maps app on iOS/Android when installed, falls back to Google Maps on the
+// web otherwise). Prefers the geocoded coordinates; falls back to the raw
+// address text if geocoding hasn't produced lat/lng for some reason.
+export function getMapsUrl(a: { lat: number | null; lng: number | null; location: string | null }): string | null {
+  if (a.lat != null && a.lng != null) {
+    return `https://www.google.com/maps/search/?api=1&query=${a.lat},${a.lng}`;
+  }
+  if (a.location) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.location)}`;
+  }
+  return null;
+}

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { Attraction, Category } from '@/lib/types';
-import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull } from '@/lib/utils';
+import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull, getMapsUrl } from '@/lib/utils';
 import { updateAttraction, deleteAttraction, removeTicketUrl } from '@/app/actions';
 import { TICKET_IMAGE_EXTENSION_RE, ticketFilename, uploadTicketFile } from '@/lib/tickets';
 import { isTicketFileTooLarge, MAX_TICKET_FILE_SIZE_LABEL } from '@/lib/ticketLimits';
@@ -10,7 +10,7 @@ import { findTimeConflict } from '@/lib/timeUtils';
 import LocationAutocomplete from './LocationAutocomplete';
 import TimeInput from './TimeInput';
 import ConfirmDialog from './ConfirmDialog';
-import { X, Trash2, Save, Upload, FileText, WifiOff } from 'lucide-react';
+import { X, Trash2, Save, Upload, FileText, WifiOff, MapPin } from 'lucide-react';
 
 interface EditModalProps {
   attraction: Attraction;
@@ -42,6 +42,9 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
   const [ticketError, setTicketError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  // Based on the saved attraction (not the in-progress form edit) since lat/lng
+  // only exist once the location has actually been geocoded on a prior save.
+  const mapsUrl = getMapsUrl(attraction);
 
   const handleClose = () => {
     const hasChanges = (Object.keys(initialForm) as (keyof typeof initialForm)[]).some(
@@ -290,9 +293,23 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
 
           {/* Location */}
           <div>
-            <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-              Location
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                Location
+              </label>
+              {mapsUrl && (
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  <MapPin size={11} />
+                  Open in Maps
+                </a>
+              )}
+            </div>
             <LocationAutocomplete
               value={form.location}
               onChange={(v) => setForm((f) => ({ ...f, location: v }))}

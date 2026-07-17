@@ -8,13 +8,14 @@ import {
   CATEGORY_LABELS,
   LOGISTICS_CATEGORY_ORDER,
   PIN_CATEGORY_META,
+  getMapsUrl,
 } from '@/lib/utils';
 import { getTravelSegments, TravelSegment } from '@/lib/travel';
 import { Attraction, LogisticsPin } from '@/lib/types';
 import PrintButton from '@/components/PrintButton';
 import PrintTravelRow from '@/components/PrintTravelRow';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, MapPin } from 'lucide-react';
 
 function EventRow({ attraction }: { attraction: Attraction }) {
   return (
@@ -48,6 +49,21 @@ function EventRow({ attraction }: { attraction: Attraction }) {
         {attraction.notes && (
           <p className="text-xs text-gray-400 mt-0.5 leading-relaxed italic">{attraction.notes}</p>
         )}
+        {attraction.location && (() => {
+          const mapsUrl = getMapsUrl(attraction);
+          return (
+            <p className="mt-0.5 text-xs text-gray-400 leading-relaxed">
+              {mapsUrl ? (
+                <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:underline">
+                  <MapPin size={11} className="shrink-0" />
+                  {attraction.location}
+                </a>
+              ) : (
+                attraction.location
+              )}
+            </p>
+          );
+        })()}
       </div>
     </div>
   );
