@@ -1,5 +1,6 @@
 import { getSupabaseClient } from './supabase';
 import { addTicketUrl } from '@/app/actions';
+import { MAX_TICKET_FILE_SIZE_BYTES, MAX_TICKET_FILE_SIZE_LABEL } from './ticketLimits';
 
 export const TICKET_IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|heic|heif)$/i;
 
@@ -16,6 +17,10 @@ export function ticketFilename(url: string): string {
 // Uploads a file to the "tickets" storage bucket under the given attraction
 // and records the resulting public URL on that attraction's row.
 export async function uploadTicketFile(attractionId: string, file: File): Promise<string> {
+  if (file.size > MAX_TICKET_FILE_SIZE_BYTES) {
+    throw new Error(`"${file.name}" is over the ${MAX_TICKET_FILE_SIZE_LABEL} limit.`);
+  }
+
   const client = getSupabaseClient();
   if (!client) throw new Error("Storage isn't configured.");
 

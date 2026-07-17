@@ -5,6 +5,7 @@ import { Attraction, Category } from '@/lib/types';
 import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull } from '@/lib/utils';
 import { updateAttraction, deleteAttraction, removeTicketUrl } from '@/app/actions';
 import { TICKET_IMAGE_EXTENSION_RE, ticketFilename, uploadTicketFile } from '@/lib/tickets';
+import { isTicketFileTooLarge, MAX_TICKET_FILE_SIZE_LABEL } from '@/lib/ticketLimits';
 import { findTimeConflict } from '@/lib/timeUtils';
 import LocationAutocomplete from './LocationAutocomplete';
 import TimeInput from './TimeInput';
@@ -39,6 +40,8 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
   const [tickets, setTickets] = useState(attraction.ticket_urls ?? []);
   const [uploadingTicket, setUploadingTicket] = useState(false);
   const [ticketError, setTicketError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const handleClose = () => {
     const hasChanges = (Object.keys(initialForm) as (keyof typeof initialForm)[]).some(
@@ -52,10 +55,16 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
   };
 
   const handleDelete = async () => {
+    setDeleteError(null);
     setIsDeleting(true);
-    await deleteAttraction(attraction.id);
-    onDeleted(attraction.id);
-    onClose();
+    try {
+      await deleteAttraction(attraction.id);
+      onDeleted(attraction.id);
+      onClose();
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Couldn't delete — try again.");
+      setIsDeleting(false);
+    }
   };
 
   const handleTicketUpload = async (file: File) => {
@@ -64,16 +73,24 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
     try {
       const url = await uploadTicketFile(attraction.id, file);
       setTickets((prev) => [...prev, url]);
-    } catch {
-      setTicketError('Upload failed — try again.');
+    } catch (err) {
+      setTicketError(err instanceof Error ? err.message : 'Upload failed — try again.');
     } finally {
       setUploadingTicket(false);
     }
   };
 
   const handleTicketDelete = async (url: string) => {
+    setTicketError(null);
     setTickets((prev) => prev.filter((u) => u !== url));
-    await removeTicketUrl(attraction.id, url);
+    try {
+      await removeTicketUrl(attraction.id, url);
+    } catch (err) {
+      // Roll back the optimistic removal so the ticket doesn't just vanish
+      // from view while it's still sitting in the database.
+      setTickets((prev) => (prev.includes(url) ? prev : [...prev, url]));
+      setTicketError(err instanceof Error ? err.message : "Couldn't remove ticket — try again.");
+    }
   };
   const tripDates = generateTripDates();
   const categories = Object.keys(CATEGORY_LABELS) as Category[];
@@ -94,6 +111,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
       }
     }
     setConflictError(null);
+    setSaveError(null);
     startTransition(async () => {
       const patch: Partial<Attraction> = {
         name: form.name.trim(),
@@ -110,8 +128,12 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
       if (trimmedLocation !== attraction.location) {
         patch.location = trimmedLocation;
       }
-      await updateAttraction(attraction.id, patch);
-      onSaved({ ...attraction, ...patch });
+      try {
+        await updateAttraction(attraction.id, patch);
+        onSaved({ ...attraction, ...patch });
+      } catch (err) {
+        setSaveError(err instanceof Error ? err.message : "Couldn't save — try again.");
+      }
     });
   };
 
@@ -177,6 +199,11 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
               <Trash2 size={18} />
             </button>
           </div>
+          {(saveError || deleteError) && (
+            <p className="-mt-2 text-xs text-red-500 dark:text-red-400 font-medium">
+              {saveError || deleteError}
+            </p>
+          )}
 
           {/* Day */}
           <div>
@@ -350,7 +377,12 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       e.target.value = '';
-                      if (file) handleTicketUpload(file);
+                      if (!file) return;
+                      if (isTicketFileTooLarge(file)) {
+                        setTicketError(`"${file.name}" is over the ${MAX_TICKET_FILE_SIZE_LABEL} limit.`);
+                        return;
+                      }
+                      handleTicketUpload(file);
                     }}
                   />
                 </label>

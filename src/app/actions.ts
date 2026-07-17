@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { Attraction, Category, DayNote } from '@/lib/types';
 import { geocodeAddress, searchLocations as searchLocationsGeo, GeocodeSuggestion } from '@/lib/geocode';
+import { MAX_TICKET_FILE_SIZE_BYTES } from '@/lib/ticketLimits';
 
 function getSupabase() {
   return createClient(
@@ -50,7 +51,12 @@ export async function createAttraction(formData: FormData): Promise<void> {
 
   if (error) throw new Error(error.message);
 
-  const tickets = formData.getAll('tickets').filter((f): f is File => f instanceof File && f.size > 0);
+  // The client already blocks oversized files before submit; skipping (rather
+  // than throwing) here is just a defensive backstop so one bad file can't
+  // fail the whole submission if that check is ever bypassed.
+  const tickets = formData
+    .getAll('tickets')
+    .filter((f): f is File => f instanceof File && f.size > 0 && f.size <= MAX_TICKET_FILE_SIZE_BYTES);
   if (tickets.length > 0) {
     const ticketUrls = await Promise.all(
       tickets.map(async (file) => {

@@ -2,11 +2,13 @@
 
 import { useRef, useState } from 'react';
 import { Upload, X, FileText } from 'lucide-react';
+import { isTicketFileTooLarge, MAX_TICKET_FILE_SIZE_LABEL } from '@/lib/ticketLimits';
 
 const TICKET_IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|heic|heif)$/i;
 
 export default function TicketUploadField() {
   const [files, setFiles] = useState<File[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // The native input's FileList is the source of truth for form submission,
@@ -70,10 +72,19 @@ export default function TicketUploadField() {
             className="hidden"
             onChange={(e) => {
               const picked = Array.from(e.target.files ?? []);
-              if (picked.length) syncFiles([...files, ...picked]);
+              const tooBig = picked.filter(isTicketFileTooLarge);
+              const ok = picked.filter((f) => !isTicketFileTooLarge(f));
+
+              setError(
+                tooBig.length > 0
+                  ? `${tooBig.map((f) => `"${f.name}"`).join(', ')} ${tooBig.length > 1 ? 'are' : 'is'} over the ${MAX_TICKET_FILE_SIZE_LABEL} limit and won't be added.`
+                  : null
+              );
+              if (ok.length) syncFiles([...files, ...ok]);
             }}
           />
         </label>
+        {error && <p className="text-xs text-red-500 dark:text-red-400 font-medium">{error}</p>}
       </div>
     </div>
   );

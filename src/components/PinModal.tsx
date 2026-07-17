@@ -26,36 +26,48 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
   });
   const [isPending, startTransition] = useTransition();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const isOnline = useOnlineStatus();
 
   const handleSave = () => {
     if (!form.title.trim() || !isOnline) return;
+    setError(null);
     startTransition(async () => {
-      if (isEditing) {
-        await updatePin(pin.id, {
-          category: form.category,
-          title: form.title.trim(),
-          content: form.content,
-        });
-        onSaved({ ...pin, category: form.category, title: form.title.trim(), content: form.content });
-      } else {
-        const created = await createPin({
-          category: form.category,
-          title: form.title.trim(),
-          content: form.content,
-        });
-        onSaved(created);
+      try {
+        if (isEditing) {
+          await updatePin(pin.id, {
+            category: form.category,
+            title: form.title.trim(),
+            content: form.content,
+          });
+          onSaved({ ...pin, category: form.category, title: form.title.trim(), content: form.content });
+        } else {
+          const created = await createPin({
+            category: form.category,
+            title: form.title.trim(),
+            content: form.content,
+          });
+          onSaved(created);
+        }
+        onClose();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Couldn't save — try again.");
       }
-      onClose();
     });
   };
 
   const handleDelete = async () => {
     if (!pin || !isOnline) return;
+    setError(null);
     setIsDeleting(true);
-    await deletePin(pin.id);
-    onDeleted?.(pin.id);
-    onClose();
+    try {
+      await deletePin(pin.id);
+      onDeleted?.(pin.id);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't delete — try again.");
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -152,6 +164,9 @@ export default function PinModal({ pin, onClose, onSaved, onDeleted }: PinModalP
         </div>
 
         <div className="px-6 pb-5 space-y-2">
+          {error && (
+            <p className="text-xs text-red-500 dark:text-red-400 font-medium">{error}</p>
+          )}
           <div className="flex gap-3">
             <button
               onClick={onClose}

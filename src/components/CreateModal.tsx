@@ -5,6 +5,7 @@ import { Attraction, Category } from '@/lib/types';
 import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull } from '@/lib/utils';
 import { createAttractionObject } from '@/app/actions';
 import { TICKET_IMAGE_EXTENSION_RE, uploadTicketFile } from '@/lib/tickets';
+import { isTicketFileTooLarge, MAX_TICKET_FILE_SIZE_LABEL } from '@/lib/ticketLimits';
 import { minutesToTime, timeToMinutes, DEFAULT_DURATION_MINUTES, findTimeConflict } from '@/lib/timeUtils';
 import { useOnlineStatus } from '@/lib/useOnlineStatus';
 import LocationAutocomplete from './LocationAutocomplete';
@@ -38,6 +39,7 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
   const [conflictError, setConflictError] = useState<string | null>(null);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [ticketError, setTicketError] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
   const isOnline = useOnlineStatus();
 
   const handleClose = () => {
@@ -65,25 +67,34 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
     }
     setConflictError(null);
     setTicketError(null);
+    setCreateError(null);
     startTransition(async () => {
-      const attraction = await createAttractionObject({
-        name: form.name.trim(),
-        description: form.description || null,
-        category: form.category,
-        scheduled_date: form.scheduled_date || null,
-        start_time: form.start_time || null,
-        end_time: form.end_time || null,
-        notes: null,
-        location: form.location.trim() || null,
-      });
+      let attraction;
+      try {
+        attraction = await createAttractionObject({
+          name: form.name.trim(),
+          description: form.description || null,
+          category: form.category,
+          scheduled_date: form.scheduled_date || null,
+          start_time: form.start_time || null,
+          end_time: form.end_time || null,
+          notes: null,
+          location: form.location.trim() || null,
+        });
+      } catch (err) {
+        setCreateError(err instanceof Error ? err.message : "Couldn't save — try again.");
+        return;
+      }
 
       let ticketUrls = attraction.ticket_urls;
       if (pendingTickets.length > 0) {
         try {
           const uploaded = await Promise.all(pendingTickets.map((file) => uploadTicketFile(attraction.id, file)));
           ticketUrls = [...ticketUrls, ...uploaded];
-        } catch {
-          setTicketError('Some tickets failed to upload — you can add them from the event afterward.');
+        } catch (err) {
+          setTicketError(
+            err instanceof Error ? err.message : 'Some tickets failed to upload — you can add them from the event afterward.'
+          );
         }
       }
 
@@ -292,7 +303,13 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       e.target.value = '';
-                      if (file) setPendingTickets((prev) => [...prev, file]);
+                      if (!file) return;
+                      if (isTicketFileTooLarge(file)) {
+                        setTicketError(`"${file.name}" is over the ${MAX_TICKET_FILE_SIZE_LABEL} limit.`);
+                        return;
+                      }
+                      setTicketError(null);
+                      setPendingTickets((prev) => [...prev, file]);
                     }}
                   />
                 </label>
@@ -305,20 +322,25 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
         </div>
 
         {/* Footer */}
-        <div className="px-6 pb-5 flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleCreate}
-            disabled={isPending || !form.name.trim() || !isOnline}
-            className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors"
-          >
-            {isPending ? 'Adding…' : 'Add to trip'}
-          </button>
+        <div className="px-6 pb-5">
+          {createError && (
+            <p className="mb-2 text-xs text-red-500 dark:text-red-400 font-medium">{createError}</p>
+          )}
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCreate}
+              disabled={isPending || !form.name.trim() || !isOnline}
+              className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors"
+            >
+              {isPending ? 'Adding…' : 'Add to trip'}
+            </button>
+          </div>
         </div>
       </div>
 

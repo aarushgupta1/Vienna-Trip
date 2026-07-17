@@ -121,7 +121,9 @@ export default function CalendarBoard({
   const [currentPage, setCurrentPage] = useState(0);
   const [createSlot, setCreateSlot] = useState<{ date: string; time: string } | null>(null);
   const [colWidth, setColWidth] = useState(200);
-  const [conflictMsg, setConflictMsg] = useState<string | null>(null);
+  // Doubles as both the drag/resize conflict notice and a generic error toast
+  // for failed writes (move, resize, check, day note) — same transient banner.
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
   // Defaults assume desktop; the resize effect below corrects for the
   // actual viewport right after mount so this can render on the server.
   const [daysPerPage, setDaysPerPage] = useState(DAYS_PER_PAGE);
@@ -164,10 +166,10 @@ export default function CalendarBoard({
   }, []);
 
   useEffect(() => {
-    if (!conflictMsg) return;
-    const t = setTimeout(() => setConflictMsg(null), 3000);
+    if (!toastMsg) return;
+    const t = setTimeout(() => setToastMsg(null), 4000);
     return () => clearTimeout(t);
-  }, [conflictMsg]);
+  }, [toastMsg]);
 
   useEffect(() => {
     localStorage.setItem('vienna-travel-modes', JSON.stringify(travelModes));
@@ -231,8 +233,15 @@ export default function CalendarBoard({
 
     setAttractions((prev) => prev.map((a) => (a.id === id ? { ...a, is_checked: isChecked } : a)));
 
-    startTransition(() => {
-      updateAttraction(id, { is_checked: isChecked });
+    startTransition(async () => {
+      try {
+        await updateAttraction(id, { is_checked: isChecked });
+      } catch {
+        // Roll back — otherwise this device shows a check that never made it
+        // to the database, and everyone else's view disagrees with it.
+        setAttractions((prev) => prev.map((a) => (a.id === id ? { ...a, is_checked: !isChecked } : a)));
+        setToastMsg("Couldn't update — check your connection and try again.");
+      }
     });
   };
 
@@ -241,8 +250,12 @@ export default function CalendarBoard({
   };
 
   const commitDayNote = (date: string, text: string) => {
-    startTransition(() => {
-      upsertDayNote(date, text);
+    startTransition(async () => {
+      try {
+        await upsertDayNote(date, text);
+      } catch {
+        setToastMsg("Couldn't save day note — check your connection and try again.");
+      }
     });
   };
 
@@ -335,10 +348,12 @@ export default function CalendarBoard({
     if (newDate && newStartTime) {
       const conflict = findTimeConflict(attractions, newDate, newStartTime, newEndTime, attractionId);
       if (conflict) {
-        setConflictMsg(`Can't move here — overlaps with "${conflict.name}"`);
+        setToastMsg(`Can't move here — overlaps with "${conflict.name}"`);
         return;
       }
     }
+
+    const previous = { scheduled_date: attraction.scheduled_date, start_time: attraction.start_time, end_time: attraction.end_time };
 
     setAttractions((prev) =>
       prev.map((a) =>
@@ -348,21 +363,37 @@ export default function CalendarBoard({
       )
     );
 
-    startTransition(() => {
-      updateAttraction(attractionId, {
-        scheduled_date: newDate,
-        start_time: newStartTime,
-        end_time: newEndTime,
-      });
+    startTransition(async () => {
+      try {
+        await updateAttraction(attractionId, {
+          scheduled_date: newDate,
+          start_time: newStartTime,
+          end_time: newEndTime,
+        });
+      } catch {
+        // Roll back to where it was before the drag — otherwise the card sits
+        // in its new spot on this screen while the database still has the old
+        // slot, so it'll "jump back" as soon as anyone else's edit syncs in.
+        setAttractions((prev) => prev.map((a) => (a.id === attractionId ? { ...a, ...previous } : a)));
+        setToastMsg("Couldn't move — check your connection and try again.");
+      }
     });
   };
 
   const handleAttractionResize = (id: string, newEndTime: string) => {
+    const attraction = attractions.find((a) => a.id === id);
+    const previousEndTime = attraction?.end_time ?? null;
+
     setAttractions((prev) =>
       prev.map((a) => (a.id === id ? { ...a, end_time: newEndTime } : a))
     );
-    startTransition(() => {
-      updateAttraction(id, { end_time: newEndTime });
+    startTransition(async () => {
+      try {
+        await updateAttraction(id, { end_time: newEndTime });
+      } catch {
+        setAttractions((prev) => prev.map((a) => (a.id === id ? { ...a, end_time: previousEndTime } : a)));
+        setToastMsg("Couldn't resize — check your connection and try again.");
+      }
     });
   };
 
@@ -526,9 +557,9 @@ export default function CalendarBoard({
         </DragOverlay>
       </DndContext>
 
-      {conflictMsg && (
+      {toastMsg && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] bg-red-500 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-xl pointer-events-none">
-          {conflictMsg}
+          {toastMsg}
         </div>
       )}
 
