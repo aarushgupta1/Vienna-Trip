@@ -151,7 +151,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 rounded-t-2xl">
-          <h2 className="font-bold text-gray-900 dark:text-gray-100">Edit Attraction</h2>
+          <h2 className="font-bold text-gray-900 dark:text-gray-100">Edit Event</h2>
           <button
             onClick={handleClose}
             className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-800"

@@ -43,7 +43,7 @@ export default async function HomePage() {
             href="/attractions/new"
             className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors"
           >
-            + Add Attraction
+            + Add Event
           </Link>
           <ThemeToggle />
         </div>

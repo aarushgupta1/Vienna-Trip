@@ -38,6 +38,12 @@ export const CATEGORY_COLORS: Record<Category, { bg: string; text: string; borde
     border: 'border-purple-200 dark:border-purple-800',
     dot: 'bg-purple-400',
   },
+  flights: {
+    bg: 'bg-sky-50 dark:bg-sky-950',
+    text: 'text-sky-700 dark:text-sky-300',
+    border: 'border-sky-200 dark:border-sky-800',
+    dot: 'bg-sky-400',
+  },
   other: {
     bg: 'bg-gray-50 dark:bg-gray-800',
     text: 'text-gray-600 dark:text-gray-300',
@@ -51,6 +57,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   food: 'Food & Dining',
   landmark: 'Landmark',
   entertainment: 'Entertainment',
+  flights: 'Flights',
   other: 'Other',
 };
 
@@ -59,6 +66,7 @@ export const CATEGORY_ICONS: Record<Category, string> = {
   food: '🍽️',
   landmark: '🏰',
   entertainment: '🎭',
+  flights: '✈️',
   other: '📍',
 };
 

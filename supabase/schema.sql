@@ -10,7 +10,7 @@ create table if not exists attractions (
   name         text not null,
   description  text,
   category     text not null default 'other'
-               check (category in ('museum', 'food', 'landmark', 'entertainment', 'other')),
+               check (category in ('museum', 'food', 'landmark', 'entertainment', 'flights', 'other')),
   scheduled_date date,
   start_time   time,
   end_time     time,
@@ -26,6 +26,13 @@ create table if not exists attractions (
 alter table attractions add column if not exists location text;
 alter table attractions add column if not exists lat double precision;
 alter table attractions add column if not exists lng double precision;
+
+-- "flights" was added as a category — the CREATE TABLE above only applies to
+-- a brand-new table, so existing databases need their check constraint
+-- widened explicitly to actually accept it.
+alter table attractions drop constraint if exists attractions_category_check;
+alter table attractions add constraint attractions_category_check
+  check (category in ('museum', 'food', 'landmark', 'entertainment', 'flights', 'other'));
 
 -- Uploaded ticket files (images/PDFs), stored as public URLs into the
 -- "tickets" storage bucket set up below.

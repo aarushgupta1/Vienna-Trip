@@ -46,7 +46,7 @@ export default function UnscheduledSidebar({
             title="Unavailable while offline"
           >
             <Plus size={13} />
-            Add Attraction
+            Add Event
           </div>
         ) : (
           <Link
@@ -54,7 +54,7 @@ export default function UnscheduledSidebar({
             className="flex items-center justify-center gap-1.5 w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
           >
             <Plus size={13} />
-            Add Attraction
+            Add Event
           </Link>
         )}
       </div>
@@ -70,7 +70,7 @@ export default function UnscheduledSidebar({
           <div className="flex flex-col items-center justify-center flex-1 text-center text-gray-300 dark:text-gray-700 py-10 gap-2">
             <Inbox size={28} strokeWidth={1.5} />
             <div className="text-xs leading-relaxed">
-              No unscheduled attractions.<br />
+              No unscheduled events.<br />
               Add one to get started!
             </div>
           </div>

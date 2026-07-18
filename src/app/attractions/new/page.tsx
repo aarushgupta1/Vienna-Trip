@@ -31,8 +31,8 @@ export default function NewAttractionPage() {
         </Link>
 
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-7">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">Add Attraction</h1>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mb-7">Add a place to visit in Vienna</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">Add Event</h1>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mb-7">Add something to your Vienna trip</p>
 
           <OfflineFormBanner />
 
