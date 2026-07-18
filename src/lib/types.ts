@@ -16,25 +16,25 @@ export interface Attraction {
   created_at: string;
 }
 
-export type LogisticsPinCategory =
-  | 'flights'
-  | 'accommodation'
-  | 'transport'
-  | 'documents'
-  | 'contacts'
-  | 'budget'
-  | 'other';
-
-export interface LogisticsPin {
-  id: string;
-  category: LogisticsPinCategory;
-  title: string;
-  content: string;
-  created_at: string;
-}
-
 export interface DayNote {
   date: string; // YYYY-MM-DD
   note: string;
   updated_at: string;
+}
+
+export type Currency = 'EUR' | 'USD';
+
+export interface Hotel {
+  id: string;
+  name: string;
+  location: string | null; // free-text address, geocoded server-side into lat/lng
+  lat: number | null;
+  lng: number | null;
+  check_in: string | null; // YYYY-MM-DD
+  check_out: string | null; // YYYY-MM-DD
+  price: number | null;
+  currency: Currency;
+  confirmation_number: string | null;
+  notes: string | null;
+  created_at: string;
 }

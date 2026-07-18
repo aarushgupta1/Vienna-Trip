@@ -12,7 +12,7 @@ import {
   TouchSensor,
 } from '@dnd-kit/core';
 import { useState, useTransition, useEffect, useRef } from 'react';
-import { Attraction, DayNote } from '@/lib/types';
+import { Attraction, DayNote, Hotel } from '@/lib/types';
 import { generateTripDates, formatDate } from '@/lib/utils';
 import { DayWeather, weatherCodeInfo } from '@/lib/weather';
 import { TravelSegment, TravelMode } from '@/lib/travel';
@@ -33,7 +33,8 @@ import { getViennaNow, useNowInVienna } from '@/lib/viennaClock';
 import { usePushNotifications } from '@/lib/pushNotifications';
 import { updateAttraction, upsertDayNote } from '@/app/actions';
 import DayColumn from './DayColumn';
-import UnscheduledSidebar from './UnscheduledSidebar';
+import HotelsSidebar from './HotelsSidebar';
+import HotelModal from './HotelModal';
 import AttractionBlock from './AttractionBlock';
 import EditModal from './EditModal';
 import CreateModal from './CreateModal';
@@ -126,15 +127,21 @@ export default function CalendarBoard({
   weather,
   travelSegments,
   initialDayNotes,
+  initialHotels,
 }: {
   initialAttractions: Attraction[];
   weather: Record<string, DayWeather>;
   travelSegments: Record<string, TravelSegment>;
   initialDayNotes: Record<string, string>;
+  initialHotels: Hotel[];
 }) {
   const [attractions, setAttractions] = useState(initialAttractions);
   const [activeAttraction, setActiveAttraction] = useState<Attraction | null>(null);
   const [editingAttraction, setEditingAttraction] = useState<Attraction | null>(null);
+  const [hotels, setHotels] = useState(initialHotels);
+  const [hotelModalState, setHotelModalState] = useState<
+    { mode: 'add' } | { mode: 'edit'; hotel: Hotel } | null
+  >(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [createSlot, setCreateSlot] = useState<{ date: string; time: string } | null>(null);
   const [colWidth, setColWidth] = useState(200);
@@ -249,6 +256,46 @@ export default function CalendarBoard({
     return () => { client.removeChannel(channel); };
   }, []);
 
+  // Realtime: sync hotels added/edited/deleted by other family members
+  useEffect(() => {
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    const channel = client
+      .channel('hotels-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'hotels' }, (payload: any) => {
+        const row = payload.new as Hotel;
+        setHotels((prev) => prev.find((h) => h.id === row.id) ? prev : [...prev, row]);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'hotels' }, (payload: any) => {
+        const row = payload.new as Hotel;
+        setHotels((prev) => prev.map((h) => h.id === row.id ? row : h));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'hotels' }, (payload: any) => {
+        const id = (payload.old as { id: string }).id;
+        setHotels((prev) => prev.filter((h) => h.id !== id));
+      })
+      .subscribe();
+
+    return () => { client.removeChannel(channel); };
+  }, []);
+
+  const handleHotelSaved = (hotel: Hotel) => {
+    setHotels((prev) => {
+      const idx = prev.findIndex((h) => h.id === hotel.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = hotel;
+        return next;
+      }
+      return [...prev, hotel];
+    });
+  };
+
+  const handleHotelDeleted = (id: string) => {
+    setHotels((prev) => prev.filter((h) => h.id !== id));
+  };
+
   const updateDayNote = (date: string, text: string) => {
     setDayNotes((prev) => ({ ...prev, [date]: text }));
   };
@@ -295,7 +342,6 @@ export default function CalendarBoard({
     (currentPage + 1) * daysPerPage
   );
 
-  const unscheduled = attractions.filter((a) => !a.scheduled_date);
   const scheduledByDate = TRIP_DATES.reduce<Record<string, Attraction[]>>((acc, date) => {
     acc[date] = attractions.filter((a) => a.scheduled_date === date);
     return acc;
@@ -319,9 +365,7 @@ export default function CalendarBoard({
     let newStartTime: string | null;
     let newEndTime: string | null;
 
-    if (overId === 'unscheduled') {
-      newDate = null; newStartTime = null; newEndTime = null;
-    } else if (overId.includes('T')) {
+    if (overId.includes('T')) {
       const splitIdx = overId.indexOf('T');
       const date = overId.slice(0, splitIdx);
       const time = overId.slice(splitIdx + 1);
@@ -437,9 +481,10 @@ export default function CalendarBoard({
             'z-50 h-full sm:static absolute top-0 left-0 transition-transform duration-200',
             sidebarOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0',
           ].join(' ')}>
-            <UnscheduledSidebar
-              attractions={unscheduled}
-              onAttractionClick={(a) => { setEditingAttraction(a); setSidebarOpen(false); }}
+            <HotelsSidebar
+              hotels={hotels}
+              onAddHotel={() => { setHotelModalState({ mode: 'add' }); setSidebarOpen(false); }}
+              onHotelClick={(hotel) => { setHotelModalState({ mode: 'edit', hotel }); setSidebarOpen(false); }}
               onClose={() => setSidebarOpen(false)}
               readOnly={!isOnline}
             />
@@ -458,7 +503,7 @@ export default function CalendarBoard({
               <button
                 onClick={() => setSidebarOpen((o) => !o)}
                 className="sm:hidden p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors"
-                title="Unscheduled"
+                title="Hotels"
               >
                 <PanelLeftOpen size={20} />
               </button>
@@ -630,6 +675,18 @@ export default function CalendarBoard({
             handleAttractionCreated(attraction);
             setCreateSlot(null);
           }}
+        />
+      )}
+
+      {hotelModalState && (
+        <HotelModal
+          hotel={hotelModalState.mode === 'edit' ? hotelModalState.hotel : undefined}
+          onClose={() => setHotelModalState(null)}
+          onSaved={(hotel) => {
+            handleHotelSaved(hotel);
+            setHotelModalState(null);
+          }}
+          onDeleted={handleHotelDeleted}
         />
       )}
     </>

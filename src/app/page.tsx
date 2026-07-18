@@ -1,4 +1,4 @@
-import { getAttractions, getDayNotes } from './actions';
+import { getAttractions, getDayNotes, getHotels } from './actions';
 import CalendarBoard from '@/components/CalendarBoardClient';
 import ThemeToggle from '@/components/ThemeToggle';
 import { generateTripDates } from '@/lib/utils';
@@ -15,6 +15,7 @@ export default async function HomePage() {
   const weather = await getWeatherForDates(generateTripDates());
   const travelSegments = await getTravelSegments(attractions);
   const dayNotes = await getDayNotes();
+  const hotels = await getHotels();
 
   return (
     <main className="h-dvh flex flex-col bg-gray-50 dark:bg-gray-950">
@@ -27,12 +28,6 @@ export default async function HomePage() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <Link
-            href="/logistics"
-            className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium transition-colors"
-          >
-            Logistics
-          </Link>
           <Link
             href="/print"
             className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium transition-colors"
@@ -65,6 +60,7 @@ export default async function HomePage() {
           weather={weather}
           travelSegments={travelSegments}
           initialDayNotes={dayNotes}
+          initialHotels={hotels}
         />
       </div>
     </main>

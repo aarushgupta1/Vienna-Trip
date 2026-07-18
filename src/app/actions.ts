@@ -2,7 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
-import { Attraction, Category, DayNote } from '@/lib/types';
+import { Attraction, Category, DayNote, Hotel, Currency } from '@/lib/types';
 import { geocodeAddress, searchLocations as searchLocationsGeo, GeocodeSuggestion } from '@/lib/geocode';
 import { MAX_TICKET_FILE_SIZE_BYTES } from '@/lib/ticketLimits';
 
@@ -225,6 +225,68 @@ export async function upsertDayNote(date: string, note: string): Promise<void> {
     if (error) throw new Error(error.message);
   }
 
+  revalidatePath('/');
+}
+
+export async function getHotels(): Promise<Hotel[]> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return [];
+  }
+
+  const { data, error } = await getSupabase()
+    .from('hotels')
+    .select('*')
+    .order('check_in', { ascending: true, nullsFirst: false });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Hotel[];
+}
+
+export async function createHotel(data: {
+  name: string;
+  location: string | null;
+  check_in: string | null;
+  check_out: string | null;
+  price: number | null;
+  currency: Currency;
+  confirmation_number: string | null;
+  notes: string | null;
+}): Promise<Hotel> {
+  const geo = data.location ? await geocodeAddress(data.location) : null;
+
+  const { data: row, error } = await getSupabase()
+    .from('hotels')
+    .insert({ ...data, lat: geo?.lat ?? null, lng: geo?.lng ?? null })
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  revalidatePath('/');
+  return row as Hotel;
+}
+
+export async function updateHotel(
+  id: string,
+  data: Partial<Pick<Hotel, 'name' | 'location' | 'check_in' | 'check_out' | 'price' | 'currency' | 'confirmation_number' | 'notes'>>
+): Promise<void> {
+  // Only re-geocode when the location actually changed, same reasoning as
+  // updateAttraction — callers only pass `location` when it's different.
+  const patch: Record<string, unknown> = { ...data };
+  if ('location' in patch) {
+    const location = (patch.location as string | null) || null;
+    const geo = location ? await geocodeAddress(location) : null;
+    patch.location = location;
+    patch.lat = geo?.lat ?? null;
+    patch.lng = geo?.lng ?? null;
+  }
+
+  const { error } = await getSupabase().from('hotels').update(patch).eq('id', id);
+  if (error) throw new Error(error.message);
+  revalidatePath('/');
+}
+
+export async function deleteHotel(id: string): Promise<void> {
+  const { error } = await getSupabase().from('hotels').delete().eq('id', id);
+  if (error) throw new Error(error.message);
   revalidatePath('/');
 }
 

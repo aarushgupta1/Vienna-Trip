@@ -52,13 +52,13 @@ export default function NewAttractionPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
-                Schedule for day
+                Schedule for day <span className="text-red-400 normal-case font-normal">required</span>
               </label>
               <select
                 name="scheduled_date"
+                required
                 className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200"
               >
-                <option value="">Unscheduled (add to calendar later)</option>
                 {tripDates.map((date) => (
                   <option key={date} value={date}>
                     {formatDateFull(date)}

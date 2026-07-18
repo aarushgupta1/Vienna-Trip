@@ -1,17 +1,14 @@
 import { getAttractions, getDayNotes } from '../actions';
-import { getPins } from '../logistics/actions';
 import {
   generateTripDates,
   formatDateFull,
   formatTime,
   CATEGORY_ICONS,
   CATEGORY_LABELS,
-  LOGISTICS_CATEGORY_ORDER,
-  PIN_CATEGORY_META,
   getMapsUrl,
 } from '@/lib/utils';
 import { getTravelSegments, TravelSegment } from '@/lib/travel';
-import { Attraction, LogisticsPin } from '@/lib/types';
+import { Attraction } from '@/lib/types';
 import PrintButton from '@/components/PrintButton';
 import PrintTravelRow from '@/components/PrintTravelRow';
 import Link from 'next/link';
@@ -93,28 +90,8 @@ function DayEvents({ events, travelSegments }: { events: Attraction[]; travelSeg
   );
 }
 
-function PinRow({ pin }: { pin: LogisticsPin }) {
-  const meta = PIN_CATEGORY_META[pin.category];
-  return (
-    <div className="flex gap-4 py-2 border-b border-gray-100 last:border-b-0">
-      <div className="w-32 shrink-0 text-right text-xs text-gray-400 leading-relaxed pt-0.5 whitespace-nowrap">
-        {meta.icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-gray-900 text-sm leading-snug">{pin.title}</p>
-        {pin.content && (
-          <p className="text-xs text-gray-500 mt-0.5 leading-relaxed whitespace-pre-wrap">
-            {pin.content}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default async function PrintPage() {
   const attractions = await getAttractions();
-  const pins = await getPins();
   const dayNotes = await getDayNotes();
   const travelSegments = await getTravelSegments(attractions);
   const dates = generateTripDates();
@@ -129,13 +106,6 @@ export default async function PrintPage() {
         return a.start_time.localeCompare(b.start_time);
       }),
   }));
-
-  const unscheduled = attractions.filter((a) => !a.scheduled_date);
-
-  const pinsByCategory = LOGISTICS_CATEGORY_ORDER.map((category) => ({
-    category,
-    pins: pins.filter((p) => p.category === category),
-  })).filter((group) => group.pins.length > 0);
 
   return (
     <div className="min-h-screen bg-white">
@@ -159,31 +129,8 @@ export default async function PrintPage() {
           <p className="text-sm text-gray-500 mt-0.5">August 6 – 16, 2026 &nbsp;·&nbsp; Family Itinerary</p>
         </div>
 
-        {/* Logistics — comes first, clearly separated from the day-by-day schedule below */}
-        {pinsByCategory.length > 0 && (
-          <div className="mb-10 pb-8 break-inside-avoid">
-            <h2 className="text-lg font-bold text-gray-900 tracking-tight mb-4 pb-2 border-b-2 border-gray-900">
-              Logistics
-            </h2>
-            <div className="space-y-6">
-              {pinsByCategory.map(({ category, pins }) => (
-                <div key={category} className="break-inside-avoid">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
-                    {PIN_CATEGORY_META[category].label}
-                  </h3>
-                  <div className="border border-gray-200 rounded-lg overflow-hidden">
-                    {pins.map((pin) => (
-                      <PinRow key={pin.id} pin={pin} />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Itinerary — starts on its own printed page when Logistics is present above it */}
-        <div className={pinsByCategory.length > 0 ? 'print:break-before-page' : undefined}>
+        {/* Itinerary */}
+        <div>
           <h2 className="text-lg font-bold text-gray-900 tracking-tight mb-4 pb-2 border-b-2 border-gray-900">
             Itinerary
           </h2>
@@ -209,20 +156,6 @@ export default async function PrintPage() {
               </div>
             ))}
           </div>
-
-          {/* Unscheduled */}
-          {unscheduled.length > 0 && (
-            <div className="mt-10 pt-6 border-t-2 border-gray-200 break-inside-avoid">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
-                Ideas / Unscheduled
-              </h3>
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                {unscheduled.map((a) => (
-                  <EventRow key={a.id} attraction={a} />
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

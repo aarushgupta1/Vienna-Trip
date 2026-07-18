@@ -22,11 +22,14 @@ interface EditModalProps {
 }
 
 export default function EditModal({ attraction, allAttractions, onClose, onSaved, onDeleted, readOnly = false }: EditModalProps) {
+  // Legacy unscheduled events (from before the "Unscheduled" option was
+  // removed) fall back to the trip's first day rather than an empty value,
+  // since every event now needs a real scheduled date.
   const initialForm = {
     name: attraction.name,
     description: attraction.description ?? '',
     category: attraction.category,
-    scheduled_date: attraction.scheduled_date ?? '',
+    scheduled_date: attraction.scheduled_date ?? generateTripDates()[0],
     start_time: attraction.start_time ?? '',
     end_time: attraction.end_time ?? '',
     notes: attraction.notes ?? '',
@@ -219,7 +222,6 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
               disabled={readOnly}
               className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-200 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <option value="">Unscheduled</option>
               {tripDates.map((d) => (
                 <option key={d} value={d}>
                   {formatDateFull(d)}

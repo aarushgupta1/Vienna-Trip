@@ -1,4 +1,4 @@
-import { Category, LogisticsPinCategory } from './types';
+import { Category } from './types';
 
 export const TRIP_START = '2026-08-06';
 export const TRIP_END = '2026-08-16';
@@ -70,78 +70,6 @@ export const CATEGORY_ICONS: Record<Category, string> = {
   other: '📍',
 };
 
-export const LOGISTICS_CATEGORY_ORDER: LogisticsPinCategory[] = [
-  'flights',
-  'accommodation',
-  'transport',
-  'documents',
-  'contacts',
-  'budget',
-  'other',
-];
-
-export const PIN_CATEGORY_META: Record<
-  LogisticsPinCategory,
-  { label: string; icon: string; bg: string; text: string; border: string; badge: string }
-> = {
-  flights: {
-    label: 'Flights',
-    icon: '✈️',
-    bg: 'bg-sky-50 dark:bg-sky-950/40',
-    text: 'text-sky-700 dark:text-sky-300',
-    border: 'border-sky-200 dark:border-sky-800',
-    badge: 'bg-sky-100 text-sky-700 dark:bg-sky-900/60 dark:text-sky-300',
-  },
-  accommodation: {
-    label: 'Hotels',
-    icon: '🏨',
-    bg: 'bg-violet-50 dark:bg-violet-950/40',
-    text: 'text-violet-700 dark:text-violet-300',
-    border: 'border-violet-200 dark:border-violet-800',
-    badge: 'bg-violet-100 text-violet-700 dark:bg-violet-900/60 dark:text-violet-300',
-  },
-  transport: {
-    label: 'Transport',
-    icon: '🚆',
-    bg: 'bg-emerald-50 dark:bg-emerald-950/40',
-    text: 'text-emerald-700 dark:text-emerald-300',
-    border: 'border-emerald-200 dark:border-emerald-800',
-    badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300',
-  },
-  documents: {
-    label: 'Documents',
-    icon: '📄',
-    bg: 'bg-amber-50 dark:bg-amber-950/40',
-    text: 'text-amber-700 dark:text-amber-300',
-    border: 'border-amber-200 dark:border-amber-800',
-    badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300',
-  },
-  contacts: {
-    label: 'Contacts',
-    icon: '📞',
-    bg: 'bg-rose-50 dark:bg-rose-950/40',
-    text: 'text-rose-700 dark:text-rose-300',
-    border: 'border-rose-200 dark:border-rose-800',
-    badge: 'bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300',
-  },
-  budget: {
-    label: 'Budget',
-    icon: '💰',
-    bg: 'bg-green-50 dark:bg-green-950/40',
-    text: 'text-green-700 dark:text-green-300',
-    border: 'border-green-200 dark:border-green-800',
-    badge: 'bg-green-100 text-green-700 dark:bg-green-900/60 dark:text-green-300',
-  },
-  other: {
-    label: 'Other',
-    icon: '📌',
-    bg: 'bg-gray-50 dark:bg-gray-800/40',
-    text: 'text-gray-600 dark:text-gray-300',
-    border: 'border-gray-200 dark:border-gray-700',
-    badge: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
-  },
-};
-
 export function formatDate(dateStr: string): { weekday: string; monthDay: string } {
   const date = new Date(dateStr + 'T12:00:00Z');
   return {
@@ -158,6 +86,13 @@ export function formatDateFull(dateStr: string): string {
     day: 'numeric',
     timeZone: 'UTC',
   });
+}
+
+// Compact "Aug 6" form — used where formatDateFull's "Wednesday, August 6"
+// would be too long (e.g. a hotel's check-in/check-out range on a card).
+export function formatDateShort(dateStr: string): string {
+  const date = new Date(dateStr + 'T12:00:00Z');
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 
 export function formatTime(timeStr: string): string {

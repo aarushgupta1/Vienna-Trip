@@ -157,7 +157,6 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
               onChange={(e) => setForm((f) => ({ ...f, scheduled_date: e.target.value }))}
               className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-200"
             >
-              <option value="">Unscheduled</option>
               {tripDates.map((d) => (
                 <option key={d} value={d}>
                   {formatDateFull(d)}

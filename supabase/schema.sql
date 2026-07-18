@@ -75,33 +75,45 @@ create policy "public_read_tickets" on storage.objects for select using (bucket_
 create policy "public_insert_tickets" on storage.objects for insert with check (bucket_id = 'tickets');
 create policy "public_delete_tickets" on storage.objects for delete using (bucket_id = 'tickets');
 
--- Logistics pinboard. Already referenced by the app; included here so a
--- fresh setup has it. If you already have this table, just run the
--- "Enable Realtime" lines below for it.
-create table if not exists logistics_pins (
-  id         uuid primary key default gen_random_uuid(),
-  category   text not null default 'other'
-             check (category in ('flights', 'accommodation', 'transport', 'documents', 'contacts', 'budget', 'other')),
-  title      text not null,
-  content    text not null default '',
-  created_at timestamptz default now()
+-- The logistics pinboard (flights/accommodation/transport/documents/contacts/
+-- budget pins) was removed in favor of the calendar's own "flights" category
+-- and the dedicated hotels list below — drops the table entirely. Safe to
+-- re-run either way.
+drop table if exists logistics_pins;
+
+-- Hotels. Multiple stays are supported (e.g. switching hotels partway
+-- through the trip) — each is its own row, listed and managed from the
+-- sidebar that used to show unscheduled attractions.
+create table if not exists hotels (
+  id                  uuid primary key default gen_random_uuid(),
+  name                text not null,
+  location            text,
+  lat                 double precision,
+  lng                 double precision,
+  check_in            date,
+  check_out           date,
+  price               numeric,
+  currency            text not null default 'EUR' check (currency in ('EUR', 'USD')),
+  confirmation_number text,
+  notes               text,
+  created_at          timestamptz default now()
 );
 
-alter table logistics_pins enable row level security;
+alter table hotels enable row level security;
 
-drop policy if exists "public_select" on logistics_pins;
-drop policy if exists "public_insert" on logistics_pins;
-drop policy if exists "public_update" on logistics_pins;
-drop policy if exists "public_delete" on logistics_pins;
-create policy "public_select" on logistics_pins for select using (true);
-create policy "public_insert" on logistics_pins for insert with check (true);
-create policy "public_update" on logistics_pins for update using (true);
-create policy "public_delete" on logistics_pins for delete using (true);
+drop policy if exists "public_select" on hotels;
+drop policy if exists "public_insert" on hotels;
+drop policy if exists "public_update" on hotels;
+drop policy if exists "public_delete" on hotels;
+create policy "public_select" on hotels for select using (true);
+create policy "public_insert" on hotels for insert with check (true);
+create policy "public_update" on hotels for update using (true);
+create policy "public_delete" on hotels for delete using (true);
 
 -- Enable Realtime (run once; also toggle the table on in the Supabase dashboard → Database → Replication)
-alter table logistics_pins replica identity full;
+alter table hotels replica identity full;
 do $$ begin
-  alter publication supabase_realtime add table logistics_pins;
+  alter publication supabase_realtime add table hotels;
 exception when duplicate_object then null; -- already added — fine on a re-run
 end $$;
 
