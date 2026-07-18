@@ -1,5 +1,4 @@
-const VIENNA_LAT = 48.2082;
-const VIENNA_LON = 16.3738;
+import { CITY_INFO, TripCity, getCityForDate } from './trip';
 
 export interface DayWeather {
   high: number; // °F
@@ -19,29 +18,43 @@ export async function getWeatherForDates(dates: string[]): Promise<Record<string
   const result: Record<string, DayWeather> = {};
   if (dates.length === 0) return result;
 
-  try {
-    const res = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${VIENNA_LAT}&longitude=${VIENNA_LON}` +
-        `&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=Europe%2FVienna&forecast_days=16&temperature_unit=fahrenheit`,
-      { next: { revalidate: 1800 } }
-    );
-    if (res.ok) {
-      const data = (await res.json()) as { daily?: DailyBlock };
-      const daily = data.daily;
-      daily?.time.forEach((day, i) => {
-        if (dates.includes(day)) {
-          result[day] = {
-            high: Math.round(daily.temperature_2m_max[i]),
-            low: Math.round(daily.temperature_2m_min[i]),
-            code: daily.weathercode[i],
-            isForecast: true,
-          };
-        }
-      });
-    }
-  } catch {
-    // Forecast unavailable — dates will fall through to historical averages below.
+  // Each date belongs to whichever city the trip is in that day, so weather
+  // is fetched per-city rather than from one fixed location.
+  const byCity = new Map<TripCity, string[]>();
+  for (const d of dates) {
+    const city = getCityForDate(d);
+    byCity.set(city, [...(byCity.get(city) ?? []), d]);
   }
+
+  await Promise.all(
+    [...byCity.entries()].map(async ([city, cityDates]) => {
+      const { lat, lng, timezone } = CITY_INFO[city];
+      try {
+        const res = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
+            `&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=${encodeURIComponent(timezone)}&forecast_days=16&temperature_unit=fahrenheit`,
+          { next: { revalidate: 1800 } }
+        );
+        if (res.ok) {
+          const data = (await res.json()) as { daily?: DailyBlock };
+          const daily = data.daily;
+          daily?.time.forEach((day, i) => {
+            if (cityDates.includes(day)) {
+              result[day] = {
+                high: Math.round(daily.temperature_2m_max[i]),
+                low: Math.round(daily.temperature_2m_min[i]),
+                code: daily.weathercode[i],
+                isForecast: true,
+              };
+            }
+          });
+        }
+      } catch {
+        // Forecast unavailable for this city — its dates fall through to
+        // historical averages below.
+      }
+    })
+  );
 
   const missingDates = dates.filter((d) => !result[d]);
   if (missingDates.length > 0) {
@@ -54,8 +67,28 @@ export async function getWeatherForDates(dates: string[]): Promise<Record<string
 // Dates outside the 16-day forecast window (e.g. a trip planned months out) get
 // a "typical weather" estimate instead: the average of the last 10 years of
 // actual observations for that calendar day, pulled from Open-Meteo's archive.
+// Each city's dates are queried against that city's own coordinates.
 async function getHistoricalAverages(dates: string[]): Promise<Record<string, DayWeather>> {
   const result: Record<string, DayWeather> = {};
+
+  const byCity = new Map<TripCity, string[]>();
+  for (const d of dates) {
+    const city = getCityForDate(d);
+    byCity.set(city, [...(byCity.get(city) ?? []), d]);
+  }
+
+  await Promise.all(
+    [...byCity.entries()].map(async ([city, cityDates]) => {
+      Object.assign(result, await getHistoricalAveragesForCity(city, cityDates));
+    })
+  );
+
+  return result;
+}
+
+async function getHistoricalAveragesForCity(city: TripCity, dates: string[]): Promise<Record<string, DayWeather>> {
+  const result: Record<string, DayWeather> = {};
+  const { lat, lng, timezone } = CITY_INFO[city];
 
   const sorted = [...dates].sort();
   const [, startMonth, startDay] = sorted[0].split('-');
@@ -73,8 +106,8 @@ async function getHistoricalAverages(dates: string[]): Promise<Record<string, Da
       const end = `${year}-${endMonth}-${endDay}`;
       try {
         const res = await fetch(
-          `https://archive-api.open-meteo.com/v1/archive?latitude=${VIENNA_LAT}&longitude=${VIENNA_LON}` +
-            `&start_date=${start}&end_date=${end}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=Europe%2FVienna&temperature_unit=fahrenheit`,
+          `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lng}` +
+            `&start_date=${start}&end_date=${end}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=${encodeURIComponent(timezone)}&temperature_unit=fahrenheit`,
           { next: { revalidate: 60 * 60 * 24 } }
         );
         if (!res.ok) return;

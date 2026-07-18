@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Attraction, Category } from '@/lib/types';
 import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull, getMapsUrl } from '@/lib/utils';
+import { getCityForDate } from '@/lib/trip';
 import { updateAttraction, deleteAttraction, removeTicketUrl } from '@/app/actions';
 import { TICKET_IMAGE_EXTENSION_RE, ticketFilename, uploadTicketFile } from '@/lib/tickets';
 import { isTicketFileTooLarge, MAX_TICKET_FILE_SIZE_LABEL } from '@/lib/ticketLimits';
@@ -224,7 +225,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
             >
               {tripDates.map((d) => (
                 <option key={d} value={d}>
-                  {formatDateFull(d)}
+                  {formatDateFull(d)} — {getCityForDate(d)}
                 </option>
               ))}
             </select>
@@ -317,7 +318,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
               onChange={(v) => setForm((f) => ({ ...f, location: v }))}
               disabled={readOnly}
               className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300 dark:placeholder-gray-600"
-              placeholder="Address or place name"
+              placeholder="Address or place name (Vienna, Salzburg, or Prague)"
             />
           </div>
 

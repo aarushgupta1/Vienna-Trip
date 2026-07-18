@@ -8,6 +8,7 @@ import {
   getMapsUrl,
 } from '@/lib/utils';
 import { getTravelSegments, TravelSegment } from '@/lib/travel';
+import { getCityForDate } from '@/lib/trip';
 import { Attraction } from '@/lib/types';
 import PrintButton from '@/components/PrintButton';
 import PrintTravelRow from '@/components/PrintTravelRow';
@@ -125,7 +126,7 @@ export default async function PrintPage() {
       <div className="max-w-2xl mx-auto px-10 py-10 print:px-0 print:py-0 print:max-w-none">
         {/* Title */}
         <div className="mb-8 pb-4 border-b-2 border-gray-900">
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Vienna Trip Planner</h1>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Vienna, Salzburg & Prague Trip Planner</h1>
           <p className="text-sm text-gray-500 mt-0.5">August 6 – 16, 2026 &nbsp;·&nbsp; Family Itinerary</p>
         </div>
 
@@ -140,6 +141,9 @@ export default async function PrintPage() {
               <div key={date} className="break-inside-avoid">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
                   {formatDateFull(date)}
+                  <span className="ml-1.5 font-semibold normal-case tracking-normal text-gray-300">
+                    — {getCityForDate(date)}
+                  </span>
                 </h3>
                 {dayNotes[date] && (
                   <p className="text-xs text-gray-500 italic mb-2 pl-32 whitespace-pre-wrap leading-relaxed">

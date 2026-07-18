@@ -6,8 +6,8 @@ import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
 const geist = Geist({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Vienna Trip Planner',
-  description: 'Family itinerary planner for our Vienna vacation, Aug 6–16 2026',
+  title: 'Vienna, Salzburg & Prague Trip Planner',
+  description: 'Family itinerary planner for our Vienna, Salzburg & Prague vacation, Aug 6–16 2026',
 };
 
 export const viewport: Viewport = {

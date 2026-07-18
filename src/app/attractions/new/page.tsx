@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createAttraction } from '@/app/actions';
 import { generateTripDates, formatDateFull, CATEGORY_LABELS, CATEGORY_ICONS } from '@/lib/utils';
+import { getCityForDate } from '@/lib/trip';
 import { Category } from '@/lib/types';
 import LocationAutocomplete from '@/components/LocationAutocomplete';
 import TimeInput from '@/components/TimeInput';
@@ -61,7 +62,7 @@ export default function NewAttractionPage() {
               >
                 {tripDates.map((date) => (
                   <option key={date} value={date}>
-                    {formatDateFull(date)}
+                    {formatDateFull(date)} — {getCityForDate(date)}
                   </option>
                 ))}
               </select>
@@ -121,7 +122,7 @@ export default function NewAttractionPage() {
               <LocationAutocomplete
                 name="location"
                 defaultValue=""
-                placeholder="Address or place name"
+                placeholder="Address or place name (Vienna, Salzburg, or Prague)"
                 className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600"
               />
             </div>

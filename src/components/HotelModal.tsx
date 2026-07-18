@@ -192,7 +192,7 @@ export default function HotelModal({ hotel, onClose, onSaved, onDeleted }: Hotel
               onChange={(v) => setForm((f) => ({ ...f, location: v }))}
               disabled={!isOnline}
               className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300 dark:placeholder-gray-600"
-              placeholder="Hotel address"
+              placeholder="Hotel address (Vienna, Salzburg, or Prague)"
             />
           </div>
 

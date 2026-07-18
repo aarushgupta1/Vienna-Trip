@@ -23,7 +23,7 @@ export default async function HomePage() {
         <div className="flex items-center gap-2">
           <MapPin size={18} className="text-blue-600 dark:text-blue-400" />
           <div>
-            <span className="font-bold text-gray-900 dark:text-gray-100 text-base">Vienna Trip Planner</span>
+            <span className="font-bold text-gray-900 dark:text-gray-100 text-base">Vienna · Salzburg · Prague</span>
             <span className="hidden sm:inline ml-2 text-xs text-gray-400 dark:text-gray-500">Aug 6 – 16, 2026</span>
           </div>
         </div>

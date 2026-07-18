@@ -7,11 +7,12 @@ export interface GeocodeSuggestion extends GeocodeResult {
   displayName: string;
 }
 
-function buildViennaQuery(address: string): string {
-  return /vienna|wien|austria|österreich/i.test(address)
-    ? address
-    : `${address}, Vienna, Austria`;
-}
+// The trip covers Vienna + Salzburg (Austria) and Prague (Czech Republic).
+// Nominatim doesn't support biasing toward multiple disjoint cities in one
+// query, so results are restricted at the country level instead — a close
+// proxy for "these 3 cities" that still lets addresses/place names resolve
+// correctly within any of them.
+const TRIP_COUNTRY_CODES = 'at,cz';
 
 // Nominatim (OpenStreetMap) — free, no API key, fair-use policy requires a
 // descriptive User-Agent and caps usage at ~1 request/sec, which is fine here
@@ -19,7 +20,7 @@ function buildViennaQuery(address: string): string {
 export async function geocodeAddress(address: string): Promise<GeocodeResult | null> {
   try {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(buildViennaQuery(address))}&format=json&limit=1`,
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&countrycodes=${TRIP_COUNTRY_CODES}`,
       { headers: { 'User-Agent': 'vienna-trip-planner (family itinerary app)' } }
     );
     if (!res.ok) return null;
@@ -40,7 +41,7 @@ export async function searchLocations(query: string): Promise<GeocodeSuggestion[
 
   try {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(buildViennaQuery(query))}&format=json&limit=5`,
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=${TRIP_COUNTRY_CODES}`,
       { headers: { 'User-Agent': 'vienna-trip-planner (family itinerary app)' } }
     );
     if (!res.ok) return [];

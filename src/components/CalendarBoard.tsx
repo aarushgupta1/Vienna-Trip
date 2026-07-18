@@ -14,6 +14,7 @@ import {
 import { useState, useTransition, useEffect, useRef } from 'react';
 import { Attraction, DayNote, Hotel } from '@/lib/types';
 import { generateTripDates, formatDate } from '@/lib/utils';
+import { getCityForDate, CITY_COLORS } from '@/lib/trip';
 import { DayWeather, weatherCodeInfo } from '@/lib/weather';
 import { TravelSegment, TravelMode } from '@/lib/travel';
 import {
@@ -59,6 +60,8 @@ function DayHeader({
 }) {
   const { weekday, monthDay } = formatDate(date);
   const [editing, setEditing] = useState(false);
+  const city = getCityForDate(date);
+  const cityColor = CITY_COLORS[city];
 
   return (
     <div
@@ -74,12 +77,19 @@ function DayHeader({
         <div className={['text-sm font-bold leading-snug', isToday ? 'text-blue-700 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'].join(' ')}>
           {monthDay}
         </div>
+        <div
+          className={['inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wide', cityColor.bg, cityColor.text].join(' ')}
+          title={city}
+        >
+          <span className={['w-1 h-1 rounded-full', cityColor.dot].join(' ')} />
+          {city}
+        </div>
         {weather && (() => {
           const { icon, label } = weatherCodeInfo(weather.code);
           return (
             <div
               className="flex items-center justify-center gap-1 text-[10px] text-gray-500 dark:text-gray-400 mt-0.5"
-              title={`${label}${weather.isForecast ? '' : ' (average)'} — Vienna`}
+              title={`${label}${weather.isForecast ? '' : ' (average)'} — ${city}`}
             >
               <span>{icon}</span>
               <span className="font-medium">{weather.high}°</span>
@@ -576,9 +586,10 @@ export default function CalendarBoard({
               <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-[11px] font-semibold">
                 <button
                   onClick={() => setTimezone('vienna')}
+                  title="Local time (Vienna, Salzburg & Prague all share the same time zone)"
                   className={timezone === 'vienna' ? 'px-2.5 py-1.5 bg-blue-500 text-white' : 'px-2.5 py-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors'}
                 >
-                  VIE
+                  CEST
                 </button>
                 <button
                   onClick={() => setTimezone('eastern')}
