@@ -200,7 +200,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
             <button
               onClick={handleDelete}
               disabled={isDeleting || isPending || readOnly}
-              title="Delete attraction"
+              title="Delete event"
               className="shrink-0 p-2.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-700 dark:hover:text-red-300 rounded-xl transition-colors disabled:opacity-40"
             >
               <Trash2 size={18} />

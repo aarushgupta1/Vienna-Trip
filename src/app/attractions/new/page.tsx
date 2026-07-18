@@ -33,7 +33,7 @@ export default function NewAttractionPage() {
 
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-7">
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">Add Event</h1>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mb-7">Add something to your Vienna trip</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mb-7">Add something to your Vienna, Salzburg & Prague trip</p>
 
           <OfflineFormBanner />
 
@@ -134,7 +134,7 @@ export default function NewAttractionPage() {
               <textarea
                 name="description"
                 rows={2}
-                placeholder="Brief description of the attraction..."
+                placeholder="Brief description of the event..."
                 className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-gray-50 dark:bg-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600"
               />
             </div>

@@ -57,7 +57,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   food: 'Food & Dining',
   landmark: 'Landmark',
   entertainment: 'Entertainment',
-  flights: 'Flights',
+  flights: 'Flight',
   other: 'Other',
 };
 
@@ -123,14 +123,18 @@ export function formatTimeInZone(timeStr: string, timezone: CalendarTimezone): s
 
 // Google's "universal" maps link — works cross-platform (opens the native
 // Maps app on iOS/Android when installed, falls back to Google Maps on the
-// web otherwise). Prefers the geocoded coordinates; falls back to the raw
-// address text if geocoding hasn't produced lat/lng for some reason.
+// web otherwise). Uses the directions action with no origin specified, which
+// makes Google Maps default the starting point to the user's current
+// location (prompting for location access/a starting point if it isn't
+// available) rather than just centering on the destination. Prefers the
+// geocoded coordinates; falls back to the raw address text if geocoding
+// hasn't produced lat/lng for some reason.
 export function getMapsUrl(a: { lat: number | null; lng: number | null; location: string | null }): string | null {
   if (a.lat != null && a.lng != null) {
-    return `https://www.google.com/maps/search/?api=1&query=${a.lat},${a.lng}`;
+    return `https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lng}`;
   }
   if (a.location) {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.location)}`;
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(a.location)}`;
   }
   return null;
 }

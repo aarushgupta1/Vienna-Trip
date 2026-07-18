@@ -29,12 +29,6 @@ export default async function HomePage() {
         </div>
         <div className="flex items-center gap-4">
           <Link
-            href="/print"
-            className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium transition-colors"
-          >
-            Print
-          </Link>
-          <Link
             href="/attractions/new"
             className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors"
           >
