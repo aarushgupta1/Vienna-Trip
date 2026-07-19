@@ -12,9 +12,9 @@ import {
   MouseSensor,
   TouchSensor,
 } from '@dnd-kit/core';
-import { useState, useTransition, useEffect, useRef } from 'react';
+import { useState, useTransition, useEffect, useRef, useMemo } from 'react';
 import { Attraction, Category, DayNote, Hotel } from '@/lib/types';
-import { generateTripDates, formatDate, timeAgo } from '@/lib/utils';
+import { generateTripDates, formatDate, timeAgo, formatTimeInZone } from '@/lib/utils';
 import { getEditorName } from '@/lib/editorName';
 import { getCityForDate, CITY_COLORS } from '@/lib/trip';
 import { DayWeather, weatherCodeInfo } from '@/lib/weather';
@@ -44,7 +44,7 @@ import CreateModal from './CreateModal';
 import SearchJumpBox from './SearchJumpBox';
 import MoreMenu from './MoreMenu';
 import TimeLabels from './TimeLabels';
-import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, WifiOff, CalendarDays, Plus, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, WifiOff, CalendarDays, Plus, Search, ArrowRight } from 'lucide-react';
 
 // Leaflet touches `window`/`document` at import time, so it can only ever
 // load on the client — ssr: false keeps it (and its CSS) out of the server
@@ -132,7 +132,7 @@ function DayHeader({
             {!readOnly && (
               <span className="flex items-center gap-1 text-gray-300 dark:text-gray-600 italic group-hover:text-gray-400 dark:group-hover:text-gray-500 transition-colors">
                 <Pencil size={8} />
-                + day notes
+                + notes
               </span>
             )}
           </button>
@@ -478,6 +478,27 @@ export default function CalendarBoard({
     return acc;
   }, {});
 
+  // The very next timed event from this moment on (today's remaining events,
+  // then whichever day comes after) — lets someone check "what's coming up"
+  // without paging through the calendar. `now` is null until mounted
+  // client-side, so this stays empty during the server render.
+  const nextEvent = useMemo(() => {
+    if (!now) return null;
+    const upcoming = attractions
+      .filter((a) => !hiddenCategories.includes(a.category) && a.scheduled_date && a.start_time)
+      .filter(
+        (a) =>
+          a.scheduled_date! > now.date ||
+          (a.scheduled_date === now.date && timeToMinutes(a.start_time!) >= now.minutes)
+      )
+      .sort((a, b) => {
+        const dateCompare = a.scheduled_date!.localeCompare(b.scheduled_date!);
+        if (dateCompare !== 0) return dateCompare;
+        return a.start_time!.localeCompare(b.start_time!);
+      });
+    return upcoming[0] ?? null;
+  }, [attractions, hiddenCategories, now]);
+
   const handleDragStart = (event: DragStartEvent) => {
     setActiveAttraction(attractions.find((a) => a.id === event.active.id) ?? null);
   };
@@ -679,6 +700,28 @@ export default function CalendarBoard({
               >
                 <Search size={13} />
               </button>
+
+              {/* "Up next" — the very next timed event from now, so you can
+                  tell what's coming without paging through the calendar.
+                  Clicking it jumps straight to that event. Hidden once
+                  there's nothing left to look forward to (e.g. after the
+                  trip's last event has passed). */}
+              {nextEvent && (
+                <button
+                  onClick={() => {
+                    setCurrentPage(pageForDate(nextEvent.scheduled_date!, daysPerPage));
+                    setEditingAttraction(nextEvent);
+                  }}
+                  className="flex-1 min-w-0 mx-1 flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors"
+                  title={`Up next: ${nextEvent.name}`}
+                >
+                  <ArrowRight size={11} className="shrink-0" />
+                  <span className="text-[11px] font-semibold truncate">{nextEvent.name}</span>
+                  <span className="text-[11px] font-medium opacity-70 shrink-0 tabular-nums">
+                    {formatTimeInZone(nextEvent.start_time!, nextEvent.pin_eastern ? 'eastern' : 'vienna')}
+                  </span>
+                </button>
+              )}
 
               {/* Map, alerts, and the category filter live in one "More"
                   menu — occasional actions, not worth a button each. */}
