@@ -275,3 +275,12 @@ export async function savePushSubscription(sub: { endpoint: string; p256dh: stri
     );
   if (error) throw new Error(error.message);
 }
+
+// Called when a device turns event alerts off — removes it from the list
+// /api/send-event-reminders sends to, so this device stops getting "starts
+// in 30 min" pushes even though the browser-level notification permission
+// (which can't be revoked from JS) stays granted.
+export async function deletePushSubscription(endpoint: string): Promise<void> {
+  const { error } = await getSupabase().from('push_subscriptions').delete().eq('endpoint', endpoint);
+  if (error) throw new Error(error.message);
+}

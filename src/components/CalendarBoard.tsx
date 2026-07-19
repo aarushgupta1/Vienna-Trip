@@ -196,7 +196,12 @@ export default function CalendarBoard({
   // later window resizes fall back to the normal reset-to-page-0 behavior
   // instead of yanking the user back to today every time they resize.
   const hasJumpedToToday = useRef(false);
-  const { permission: notifyPermission, enable: enablePushNotifications } = usePushNotifications();
+  const {
+    permission: notifyPermission,
+    subscribed: notifySubscribed,
+    enable: enablePushNotifications,
+    disable: disablePushNotifications,
+  } = usePushNotifications();
 
   useEffect(() => {
     try { setTravelModes(JSON.parse(localStorage.getItem('vienna-travel-modes') ?? '{}')); } catch {}
@@ -580,11 +585,11 @@ export default function CalendarBoard({
                   a time. Also reachable via the "/" keyboard shortcut. */}
               <button
                 onClick={() => setShowSearch(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shrink-0 self-start"
+                className="flex items-center px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shrink-0 self-start"
                 title="Search events or jump to a day (/)"
+                aria-label="Search events or jump to a day"
               >
                 <Search size={13} />
-                <span className="hidden sm:inline">Search</span>
               </button>
 
               <div className="flex items-center gap-2">
@@ -593,7 +598,9 @@ export default function CalendarBoard({
                 <MoreMenu
                   onOpenMap={() => setShowMap(true)}
                   notifyPermission={notifyPermission}
+                  notifySubscribed={notifySubscribed}
                   onEnableNotifications={enablePushNotifications}
+                  onDisableNotifications={disablePushNotifications}
                   hiddenCategories={hiddenCategories}
                   onHiddenCategoriesChange={setHiddenCategories}
                 />

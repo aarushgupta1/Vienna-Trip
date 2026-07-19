@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { savePushSubscription } from '@/app/actions';
+import { savePushSubscription, deletePushSubscription } from '@/app/actions';
 
 export type NotificationPermissionState = 'unsupported' | 'default' | 'granted' | 'denied';
 
@@ -21,16 +21,26 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return output;
 }
 
-// Manages "does this device get event reminders" — permission plus the
-// actual PushManager subscription that lets the server (see
-// /api/send-event-reminders) wake this device with a notification even when
-// the app isn't open. The subscribing itself only has to happen once per
-// device; it's re-checked (not re-created) on every mount.
+// Manages "does this device get event reminders" — browser permission, plus
+// whether this device is *currently* subscribed. Those are separate: once a
+// site is granted notification permission, the browser has no API to revoke
+// it from JS again, so "turning alerts off" is instead modeled as
+// unsubscribing from PushManager and deleting the row server-side that
+// /api/send-event-reminders sends to — permission can stay "granted" while
+// subscribed is false, and re-enabling just re-subscribes without asking for
+// permission again.
 export function usePushNotifications() {
   const [permission, setPermission] = useState<NotificationPermissionState>('unsupported');
+  const [subscribed, setSubscribed] = useState(false);
 
   useEffect(() => {
-    setPermission(getNotificationPermission());
+    const current = getNotificationPermission();
+    setPermission(current);
+    if (current !== 'granted' || !('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.ready
+      .then((registration) => registration.pushManager.getSubscription())
+      .then((subscription) => setSubscribed(!!subscription))
+      .catch(() => {});
   }, []);
 
   const enable = async () => {
@@ -62,6 +72,7 @@ export function usePushNotifications() {
           p256dh: json.keys.p256dh,
           auth: json.keys.auth,
         });
+        setSubscribed(true);
       }
     } catch {
       // Subscribing can fail (browser quirks, no VAPID key configured, user
@@ -70,5 +81,26 @@ export function usePushNotifications() {
     }
   };
 
-  return { permission, enable };
+  const disable = async () => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        setSubscribed(false);
+        return;
+      }
+      const endpoint = subscription.endpoint;
+      await subscription.unsubscribe();
+      await deletePushSubscription(endpoint);
+    } catch {
+      // Best-effort — even if the server-side delete fails, the local
+      // unsubscribe (if it succeeded) already stops this device asking for
+      // pushes, so it's still reflected as off below.
+    } finally {
+      setSubscribed(false);
+    }
+  };
+
+  return { permission, subscribed, enable, disable };
 }

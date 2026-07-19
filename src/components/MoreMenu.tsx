@@ -11,7 +11,9 @@ const ALL_CATEGORIES = Object.keys(CATEGORY_LABELS) as Category[];
 interface MoreMenuProps {
   onOpenMap: () => void;
   notifyPermission: NotificationPermissionState;
+  notifySubscribed: boolean;
   onEnableNotifications: () => void;
+  onDisableNotifications: () => void;
   hiddenCategories: Category[];
   onHiddenCategoriesChange: (hidden: Category[]) => void;
 }
@@ -26,7 +28,9 @@ interface MoreMenuProps {
 export default function MoreMenu({
   onOpenMap,
   notifyPermission,
+  notifySubscribed,
   onEnableNotifications,
+  onDisableNotifications,
   hiddenCategories,
   onHiddenCategoriesChange,
 }: MoreMenuProps) {
@@ -58,15 +62,15 @@ export default function MoreMenu({
       <button
         onClick={() => setOpen((o) => !o)}
         className={[
-          'relative flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold transition-colors',
+          'relative flex items-center px-2.5 py-1 rounded-lg border transition-colors',
           hiddenCount > 0
             ? 'border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40'
             : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800',
         ].join(' ')}
         title="More: map, alerts, category filter"
+        aria-label="More options: map, alerts, category filter"
       >
         <MoreHorizontal size={15} />
-        <span className="hidden sm:inline">More</span>
         {hasBadge && (
           <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-blue-500" />
         )}
@@ -93,14 +97,26 @@ export default function MoreMenu({
               Get event alerts
             </button>
           )}
-          {notifyPermission === 'granted' && (
-            <div
-              className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-400 dark:text-gray-500"
-              title="You'll get a notification 30 minutes before each event starts, on this device — even if this app isn't open"
+          {notifyPermission === 'granted' && notifySubscribed && (
+            <button
+              onClick={() => { onDisableNotifications(); setOpen(false); }}
+              title="You'll get a notification 30 minutes before each event starts, on this device — even if this app isn't open. Click to turn off."
+              className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
-              <BellRing size={14} />
+              <BellRing size={14} className="text-blue-500 dark:text-blue-400" />
               Alerts on
-            </div>
+              <span className="ml-auto text-[10px] text-gray-400 dark:text-gray-500">Turn off</span>
+            </button>
+          )}
+          {notifyPermission === 'granted' && !notifySubscribed && (
+            <button
+              onClick={() => { onEnableNotifications(); setOpen(false); }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <BellOff size={14} className="text-gray-400 dark:text-gray-500" />
+              Alerts off
+              <span className="ml-auto text-[10px] text-gray-400 dark:text-gray-500">Turn on</span>
+            </button>
           )}
           {notifyPermission === 'denied' && (
             <div
