@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { Attraction, Category } from '@/lib/types';
 import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull } from '@/lib/utils';
 import { getCityForDate } from '@/lib/trip';
+import { getViennaNow } from '@/lib/viennaTime';
 import { createAttractionObject } from '@/app/actions';
 import { getEditorName } from '@/lib/editorName';
 import { TICKET_IMAGE_EXTENSION_RE, uploadTicketFile } from '@/lib/tickets';
@@ -16,22 +17,31 @@ import ConfirmDialog from './ConfirmDialog';
 import { X, Upload, FileText, WifiOff } from 'lucide-react';
 
 interface CreateModalProps {
-  date: string;
-  startTime: string;
+  // Both are provided when opened by clicking a specific grid slot. Left
+  // undefined when opened from the generic "+ Add Event" button instead —
+  // in that case we fall back to today (or the trip's first day) and leave
+  // the event untimed until the user picks a time themselves.
+  date?: string;
+  startTime?: string;
   allAttractions: Attraction[];
   onClose: () => void;
   onCreated: (attraction: Attraction) => void;
 }
 
 export default function CreateModal({ date, startTime, allAttractions, onClose, onCreated }: CreateModalProps) {
-  const defaultEndTime = minutesToTime(timeToMinutes(startTime) + DEFAULT_DURATION_MINUTES);
+  const tripDates = generateTripDates();
+  const defaultDate = date ?? (tripDates.includes(getViennaNow().date) ? getViennaNow().date : tripDates[0]);
+  const defaultStartTime = startTime ?? '';
+  const defaultEndTime = defaultStartTime
+    ? minutesToTime(timeToMinutes(defaultStartTime) + DEFAULT_DURATION_MINUTES)
+    : '';
 
   const initialForm = {
     name: '',
     description: '',
     category: 'other' as Category,
-    scheduled_date: date,
-    start_time: startTime,
+    scheduled_date: defaultDate,
+    start_time: defaultStartTime,
     end_time: defaultEndTime,
     location: '',
   };
@@ -55,7 +65,6 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
     onClose();
   };
 
-  const tripDates = generateTripDates();
   const categories = Object.keys(CATEGORY_LABELS) as Category[];
 
   const handleCreate = () => {

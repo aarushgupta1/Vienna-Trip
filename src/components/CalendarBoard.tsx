@@ -41,7 +41,7 @@ import AttractionBlock from './AttractionBlock';
 import EditModal from './EditModal';
 import CreateModal from './CreateModal';
 import TimeLabels from './TimeLabels';
-import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, WifiOff, CalendarDays, Bell, BellRing, BellOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, WifiOff, CalendarDays, Bell, BellRing, BellOff, Plus } from 'lucide-react';
 
 function pageForDate(date: string, daysPerPage: number): number {
   const idx = generateTripDates().indexOf(date);
@@ -156,6 +156,9 @@ export default function CalendarBoard({
   >(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [createSlot, setCreateSlot] = useState<{ date: string; time: string } | null>(null);
+  // Set when "+ Add Event" is used instead of clicking a specific grid slot —
+  // CreateModal falls back to sensible defaults (today, untimed) in that case.
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [colWidth, setColWidth] = useState(200);
   // Doubles as both the drag/resize conflict notice and a generic error toast
   // for failed writes (move, resize, check, day note) — same transient banner.
@@ -565,6 +568,18 @@ export default function CalendarBoard({
                 </button>
               </div>
 
+              {/* Add event — opens the same modal a grid click would, just without
+                  a slot pre-picked (defaults to today/untimed, editable inside) */}
+              <button
+                onClick={() => setShowQuickAdd(true)}
+                disabled={!isOnline}
+                className="flex items-center gap-1.5 mr-1 px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-xs font-semibold transition-colors"
+                title="Add an event to any day"
+              >
+                <Plus size={13} />
+                <span className="hidden sm:inline">Add Event</span>
+              </button>
+
               {/* Jump to today — only relevant while the trip is actually underway */}
               {now && generateTripDates().includes(now.date) && (
                 <button
@@ -699,15 +714,16 @@ export default function CalendarBoard({
         />
       )}
 
-      {createSlot && (
+      {(createSlot || showQuickAdd) && (
         <CreateModal
-          date={createSlot.date}
-          startTime={createSlot.time}
+          date={createSlot?.date}
+          startTime={createSlot?.time}
           allAttractions={attractions}
-          onClose={() => setCreateSlot(null)}
+          onClose={() => { setCreateSlot(null); setShowQuickAdd(false); }}
           onCreated={(attraction) => {
             handleAttractionCreated(attraction);
             setCreateSlot(null);
+            setShowQuickAdd(false);
           }}
         />
       )}

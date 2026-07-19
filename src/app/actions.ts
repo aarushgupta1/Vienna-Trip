@@ -4,7 +4,6 @@ import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { Attraction, Category, DayNote, Hotel, Currency } from '@/lib/types';
 import { geocodeAddress, searchLocations as searchLocationsGeo, GeocodeSuggestion } from '@/lib/geocode';
-import { MAX_TICKET_FILE_SIZE_BYTES } from '@/lib/ticketLimits';
 
 function getSupabase() {
   return createClient(
@@ -25,57 +24,6 @@ export async function getAttractions(): Promise<Attraction[]> {
 
   if (error) throw new Error(error.message);
   return (data ?? []) as Attraction[];
-}
-
-export async function createAttraction(formData: FormData): Promise<void> {
-  const location = (formData.get('location') as string) || null;
-  const geo = location ? await geocodeAddress(location) : null;
-  const supabase = getSupabase();
-
-  const { data: row, error } = await supabase
-    .from('attractions')
-    .insert({
-      name: formData.get('name') as string,
-      description: (formData.get('description') as string) || null,
-      category: (formData.get('category') as Category) || 'other',
-      notes: (formData.get('notes') as string) || null,
-      start_time: (formData.get('start_time') as string) || null,
-      end_time: (formData.get('end_time') as string) || null,
-      scheduled_date: (formData.get('scheduled_date') as string) || null,
-      location,
-      lat: geo?.lat ?? null,
-      lng: geo?.lng ?? null,
-      edited_by: (formData.get('edited_by') as string) || null,
-      updated_at: new Date().toISOString(),
-    })
-    .select('id')
-    .single();
-
-  if (error) throw new Error(error.message);
-
-  // The client already blocks oversized files before submit; skipping (rather
-  // than throwing) here is just a defensive backstop so one bad file can't
-  // fail the whole submission if that check is ever bypassed.
-  const tickets = formData
-    .getAll('tickets')
-    .filter((f): f is File => f instanceof File && f.size > 0 && f.size <= MAX_TICKET_FILE_SIZE_BYTES);
-  if (tickets.length > 0) {
-    const ticketUrls = await Promise.all(
-      tickets.map(async (file) => {
-        const path = `${row.id}/${Date.now()}-${file.name}`;
-        const { error: uploadError } = await supabase.storage.from('tickets').upload(path, file);
-        if (uploadError) throw new Error(uploadError.message);
-        return supabase.storage.from('tickets').getPublicUrl(path).data.publicUrl;
-      })
-    );
-    const { error: ticketsError } = await supabase
-      .from('attractions')
-      .update({ ticket_urls: ticketUrls })
-      .eq('id', row.id);
-    if (ticketsError) throw new Error(ticketsError.message);
-  }
-
-  revalidatePath('/');
 }
 
 export async function createAttractionObject(

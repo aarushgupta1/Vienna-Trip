@@ -45,10 +45,10 @@ export const CATEGORY_COLORS: Record<Category, { bg: string; text: string; borde
     dot: 'bg-sky-400',
   },
   travel: {
-    bg: 'bg-teal-50 dark:bg-teal-950',
-    text: 'text-teal-700 dark:text-teal-300',
-    border: 'border-teal-200 dark:border-teal-800',
-    dot: 'bg-teal-400',
+    bg: 'bg-rose-50 dark:bg-rose-950',
+    text: 'text-rose-700 dark:text-rose-300',
+    border: 'border-rose-200 dark:border-rose-800',
+    dot: 'bg-rose-400',
   },
   other: {
     bg: 'bg-gray-50 dark:bg-gray-800',

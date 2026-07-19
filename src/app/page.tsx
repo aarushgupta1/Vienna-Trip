@@ -5,7 +5,6 @@ import EditorNameBadge from '@/components/EditorNameBadge';
 import { generateTripDates } from '@/lib/utils';
 import { getWeatherForDates } from '@/lib/weather';
 import { getTravelSegments } from '@/lib/travel';
-import Link from 'next/link';
 import { MapPin, AlertTriangle } from 'lucide-react';
 
 export default async function HomePage() {
@@ -30,12 +29,6 @@ export default async function HomePage() {
         </div>
         <div className="flex items-center gap-3">
           <EditorNameBadge />
-          <Link
-            href="/attractions/new"
-            className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors"
-          >
-            + Add Event
-          </Link>
           <ThemeToggle />
         </div>
       </header>

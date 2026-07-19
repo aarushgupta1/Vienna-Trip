@@ -1,11 +1,11 @@
 // Bump this string whenever you deploy significant changes so old caches are cleared.
-const CACHE_NAME = 'vienna-trip-v3';
+const CACHE_NAME = 'vienna-trip-v4';
 
 // The app shell — precached on install so the calendar is viewable offline
 // even on a fresh device that's never loaded it before (as long as install
 // itself ran with a connection at least once, e.g. right after visiting the
 // link for the first time).
-const PRECACHE_URLS = ['/', '/attractions/new', '/icon.svg', '/manifest.webmanifest'];
+const PRECACHE_URLS = ['/', '/icon.svg', '/manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
