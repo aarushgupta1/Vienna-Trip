@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import {
   DndContext,
   DragEndEvent,
@@ -43,7 +44,12 @@ import CreateModal from './CreateModal';
 import SearchJumpBox from './SearchJumpBox';
 import CategoryFilterMenu from './CategoryFilterMenu';
 import TimeLabels from './TimeLabels';
-import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, WifiOff, CalendarDays, Bell, BellRing, BellOff, Plus, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, WifiOff, CalendarDays, Bell, BellRing, BellOff, Plus, Search, Map as MapIcon } from 'lucide-react';
+
+// Leaflet touches `window`/`document` at import time, so it can only ever
+// load on the client — ssr: false keeps it (and its CSS) out of the server
+// render entirely instead of crashing it.
+const MapView = dynamic(() => import('./MapView'), { ssr: false });
 
 function pageForDate(date: string, daysPerPage: number): number {
   const idx = generateTripDates().indexOf(date);
@@ -162,6 +168,7 @@ export default function CalendarBoard({
   // CreateModal falls back to sensible defaults (today, untimed) in that case.
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [showMap, setShowMap] = useState(false);
   const [colWidth, setColWidth] = useState(200);
   // Doubles as both the drag/resize conflict notice and a generic error toast
   // for failed writes (move, resize, check, day note) — same transient banner.
@@ -580,6 +587,18 @@ export default function CalendarBoard({
                 <span className="hidden sm:inline">Search</span>
               </button>
 
+              {/* Map — see a day's events plotted and connected in order, to
+                  gauge how far apart things actually are before committing
+                  to a plan. */}
+              <button
+                onClick={() => setShowMap(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shrink-0"
+                title="See this day's events on a map"
+              >
+                <MapIcon size={13} />
+                <span className="hidden sm:inline">Map</span>
+              </button>
+
               <div className="flex items-center gap-2">
                 {/* Event reminders — offer to enable once; show a quiet status icon after that */}
                 {notifyPermission === 'default' && (
@@ -790,6 +809,15 @@ export default function CalendarBoard({
           onClose={() => setShowSearch(false)}
           onJumpToDate={(date) => setCurrentPage(pageForDate(date, daysPerPage))}
           onSelectAttraction={(attraction) => setEditingAttraction(attraction)}
+        />
+      )}
+
+      {showMap && (
+        <MapView
+          attractions={attractions.filter((a) => !hiddenCategories.includes(a.category))}
+          hotels={hotels}
+          initialDate={now && generateTripDates().includes(now.date) ? now.date : visibleDates[0]}
+          onClose={() => setShowMap(false)}
         />
       )}
 
