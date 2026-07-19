@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Download, Share, X, SquarePlus } from 'lucide-react';
+import { Download, X } from 'lucide-react';
+import QRCode from 'qrcode';
 
 // The event Chrome/Edge/Android fire when the app meets install criteria
 // (valid manifest + service worker + served over HTTPS). Not in lib.dom.d.ts.
@@ -11,6 +12,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const DISMISSED_KEY = 'vienna-install-dismissed';
+const INSTALL_PARAM = 'install';
 
 function isStandalone(): boolean {
   return (
@@ -20,20 +22,42 @@ function isStandalone(): boolean {
   );
 }
 
-// Prompts family members to install the app to their home screen — Chrome/
-// Android get the real native install prompt; iOS Safari never fires
-// `beforeinstallprompt` at all, so it gets a short "Share → Add to Home
-// Screen" walkthrough instead, since that's the only way to install there.
+// Same page, marked so that whoever lands on it via the QR code skips
+// straight to the install step instead of needing to find/tap the button.
+function installUrl(): string {
+  const url = new URL(window.location.href);
+  url.hash = '';
+  url.searchParams.set(INSTALL_PARAM, '1');
+  return url.toString();
+}
+
+// Prompts family members to install the app to their home screen.
+//
+// - Mobile with real install support (Chrome/Edge/Android): a single tap
+//   fires the native install prompt directly — nothing fancier needed.
+// - Everywhere else (desktop, iOS Safari, any browser that never offers
+//   native install) shows a QR code for the page instead. On desktop that's
+//   the whole point — scan it with your phone to continue there. On mobile
+//   it doubles as an escape hatch for the common trap where the link was
+//   opened inside an in-app browser (Messages/Slack/Instagram) that Apple
+//   doesn't allow "Add to Home Screen" from at all — scanning with the
+//   Camera app forces it open in real Safari.
+// - Landing back on the page via that QR code (the `?install=1` marker) skips
+//   the QR/button entirely and jumps straight to the actual install action.
 export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [dismissed, setDismissed] = useState(true); // default hidden until checked, avoids a flash
-  const [showIOSSteps, setShowIOSSteps] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [autoTriggered, setAutoTriggered] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const autoTriggeredRef = useRef(false); // mirrors the state above, for use inside closures below
   const ref = useRef<HTMLDivElement>(null);
 
   const dismiss = () => {
     setDismissed(true);
-    setShowIOSSteps(false);
+    setOpen(false);
     try {
       localStorage.setItem(DISMISSED_KEY, '1');
     } catch {
@@ -52,11 +76,32 @@ export default function InstallPrompt() {
     setDismissed(false);
 
     const ua = window.navigator.userAgent;
-    setIsIOS(/iphone|ipad|ipod/i.test(ua) && !(window as unknown as { MSStream?: unknown }).MSStream);
+    const iOS = /iphone|ipad|ipod/i.test(ua) && !(window as unknown as { MSStream?: unknown }).MSStream;
+    const mobile = iOS || /android|mobile/i.test(ua);
+    setIsIOS(iOS);
+    setIsMobile(mobile);
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get(INSTALL_PARAM) === '1') {
+      autoTriggeredRef.current = true;
+      setAutoTriggered(true);
+      setOpen(true);
+      params.delete(INSTALL_PARAM);
+      const rest = params.toString();
+      window.history.replaceState({}, '', window.location.pathname + (rest ? `?${rest}` : ''));
+    }
 
     const onBeforeInstall = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      const evt = e as BeforeInstallPromptEvent;
+      if (autoTriggeredRef.current && mobile) {
+        evt.prompt();
+        evt.userChoice.then(({ outcome }) => {
+          if (outcome === 'accepted') dismiss();
+        });
+        return;
+      }
+      setDeferredPrompt(evt);
     };
     const onInstalled = () => {
       setDeferredPrompt(null);
@@ -72,30 +117,41 @@ export default function InstallPrompt() {
   }, []);
 
   useEffect(() => {
-    if (!showIOSSteps) return;
+    if (!open) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setShowIOSSteps(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showIOSSteps]);
+  }, [open]);
+
+  // The QR only needs generating once, the first time the popover opens —
+  // skip it entirely if we're already showing the auto-triggered "you're in,
+  // just finish this step" text instead.
+  useEffect(() => {
+    if (!open || autoTriggered || qrDataUrl) return;
+    QRCode.toDataURL(installUrl(), { width: 160, margin: 1 })
+      .then(setQrDataUrl)
+      .catch(() => {
+        // If generation fails for some reason, the popover just shows the
+        // caption with no image — not worth surfacing an error for.
+      });
+  }, [open, autoTriggered, qrDataUrl]);
+
+  const nativeAvailable = isMobile && !!deferredPrompt;
 
   const handleClick = async () => {
-    if (deferredPrompt) {
+    if (nativeAvailable && deferredPrompt) {
       await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       setDeferredPrompt(null);
       if (outcome === 'accepted') dismiss();
       return;
     }
-    if (isIOS) {
-      setShowIOSSteps((o) => !o);
-    }
+    setOpen((o) => !o);
   };
 
-  // Nothing to offer: not iOS, and the browser hasn't (yet) decided this
-  // page is installable — e.g. desktop Firefox, or criteria not met yet.
-  if (dismissed || (!deferredPrompt && !isIOS)) return null;
+  if (dismissed) return null;
 
   return (
     <div ref={ref} className="relative">
@@ -117,23 +173,33 @@ export default function InstallPrompt() {
         </button>
       </div>
 
-      {showIOSSteps && (
-        <div className="absolute right-0 top-full mt-1.5 z-50 w-64 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3">
-          <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-2">Add to Home Screen</p>
-          <ol className="space-y-2 text-xs text-gray-600 dark:text-gray-300">
-            <li className="flex items-center gap-2">
-              <span className="shrink-0 w-4 h-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[10px] font-semibold">1</span>
-              Tap the <Share size={12} className="inline shrink-0" /> Share button in Safari&apos;s toolbar
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="shrink-0 w-4 h-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[10px] font-semibold">2</span>
-              Scroll down and tap <SquarePlus size={12} className="inline shrink-0" /> &quot;Add to Home Screen&quot;
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="shrink-0 w-4 h-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[10px] font-semibold">3</span>
-              Tap &quot;Add&quot; — the app icon will appear on your home screen
-            </li>
-          </ol>
+      {open && !nativeAvailable && (
+        <div className="absolute right-0 top-full mt-1.5 z-50 w-56 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 flex flex-col items-center gap-2 text-center">
+          {autoTriggered ? (
+            <p className="text-xs text-gray-600 dark:text-gray-300">
+              {isIOS ? (
+                <>Tap the Share button, then <strong>Add to Home Screen</strong>.</>
+              ) : (
+                <>Use your browser menu and choose <strong>Add to Home Screen</strong> (or Install App).</>
+              )}
+            </p>
+          ) : (
+            <>
+              {qrDataUrl ? (
+                // A dynamically-generated data URL — next/image's optimizer
+                // doesn't add anything useful here.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={qrDataUrl} alt="QR code to open this app" width={140} height={140} className="rounded-lg" />
+              ) : (
+                <div className="w-[140px] h-[140px] rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" />
+              )}
+              <p className="text-xs text-gray-600 dark:text-gray-300">
+                {isMobile
+                  ? "Can't install here? Scan with your camera to open this in your browser."
+                  : 'Scan with your phone to install.'}
+              </p>
+            </>
+          )}
         </div>
       )}
     </div>
