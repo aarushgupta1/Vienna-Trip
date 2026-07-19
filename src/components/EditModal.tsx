@@ -105,18 +105,20 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
 
   const handleSave = () => {
     if (!form.name.trim()) return;
-    if (form.scheduled_date && form.start_time) {
-      const conflict = findTimeConflict(
-        allAttractions,
-        form.scheduled_date,
-        form.start_time,
-        form.end_time || null,
-        attraction.id
-      );
-      if (conflict) {
-        setConflictError(`Conflicts with "${conflict.name}"`);
-        return;
-      }
+    if (!form.scheduled_date || !form.start_time || !form.end_time) {
+      setConflictError('Day, start time, and end time are all required.');
+      return;
+    }
+    const conflict = findTimeConflict(
+      allAttractions,
+      form.scheduled_date,
+      form.start_time,
+      form.end_time,
+      attraction.id
+    );
+    if (conflict) {
+      setConflictError(`Conflicts with "${conflict.name}"`);
+      return;
     }
     setConflictError(null);
     setSaveError(null);
@@ -198,7 +200,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
             </div>
             <button
               onClick={handleSave}
-              disabled={isPending || isDeleting || !form.name.trim() || readOnly}
+              disabled={isPending || isDeleting || !form.name.trim() || readOnly || !form.scheduled_date || !form.start_time || !form.end_time}
               title="Save changes"
               className="shrink-0 flex items-center gap-1.5 px-3.5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors"
             >
@@ -223,7 +225,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
           {/* Day */}
           <div>
             <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-              Day
+              Day <span className="text-red-400">*</span>
             </label>
             <select
               value={form.scheduled_date}
@@ -244,7 +246,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
             <div className="grid grid-cols-2 gap-5">
               <div>
                 <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-                  Start time
+                  Start time <span className="text-red-400">*</span>
                 </label>
                 <TimeInput
                   value={form.start_time}
@@ -255,7 +257,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
               </div>
               <div>
                 <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-                  End time
+                  End time <span className="text-red-400">*</span>
                 </label>
                 <TimeInput
                   value={form.end_time}

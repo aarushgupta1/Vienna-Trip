@@ -40,8 +40,9 @@ import HotelModal from './HotelModal';
 import AttractionBlock from './AttractionBlock';
 import EditModal from './EditModal';
 import CreateModal from './CreateModal';
+import SearchJumpBox from './SearchJumpBox';
 import TimeLabels from './TimeLabels';
-import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, WifiOff, CalendarDays, Bell, BellRing, BellOff, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, WifiOff, CalendarDays, Bell, BellRing, BellOff, Plus, Search } from 'lucide-react';
 
 function pageForDate(date: string, daysPerPage: number): number {
   const idx = generateTripDates().indexOf(date);
@@ -159,6 +160,7 @@ export default function CalendarBoard({
   // Set when "+ Add Event" is used instead of clicking a specific grid slot —
   // CreateModal falls back to sensible defaults (today, untimed) in that case.
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const [colWidth, setColWidth] = useState(200);
   // Doubles as both the drag/resize conflict notice and a generic error toast
   // for failed writes (move, resize, check, day note) — same transient banner.
@@ -232,6 +234,22 @@ export default function CalendarBoard({
     const t = setTimeout(() => setToastMsg(null), 4000);
     return () => clearTimeout(t);
   }, [toastMsg]);
+
+  // "/" opens search/jump from anywhere, like most search-heavy apps —
+  // except while the user is actually typing into a text field (day notes,
+  // form inputs, etc.), where "/" should just be a normal character.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== '/') return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable) return;
+      e.preventDefault();
+      setShowSearch(true);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('vienna-travel-modes', JSON.stringify(travelModes));
@@ -568,6 +586,18 @@ export default function CalendarBoard({
                 </button>
               </div>
 
+              {/* Search/jump — find an event by name or hop straight to any
+                  trip day, without paging through the calendar one screen at
+                  a time. Also reachable via the "/" keyboard shortcut. */}
+              <button
+                onClick={() => setShowSearch(true)}
+                className="flex items-center gap-1.5 mr-1 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                title="Search events or jump to a day (/)"
+              >
+                <Search size={13} />
+                <span className="hidden sm:inline">Search</span>
+              </button>
+
               {/* Add event — opens the same modal a grid click would, just without
                   a slot pre-picked (defaults to today/untimed, editable inside) */}
               <button
@@ -725,6 +755,15 @@ export default function CalendarBoard({
             setCreateSlot(null);
             setShowQuickAdd(false);
           }}
+        />
+      )}
+
+      {showSearch && (
+        <SearchJumpBox
+          attractions={attractions}
+          onClose={() => setShowSearch(false)}
+          onJumpToDate={(date) => setCurrentPage(pageForDate(date, daysPerPage))}
+          onSelectAttraction={(attraction) => setEditingAttraction(attraction)}
         />
       )}
 

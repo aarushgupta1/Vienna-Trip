@@ -69,12 +69,14 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
 
   const handleCreate = () => {
     if (!form.name.trim() || !isOnline) return;
-    if (form.scheduled_date && form.start_time) {
-      const conflict = findTimeConflict(allAttractions, form.scheduled_date, form.start_time, form.end_time || null);
-      if (conflict) {
-        setConflictError(`Conflicts with "${conflict.name}"`);
-        return;
-      }
+    if (!form.scheduled_date || !form.start_time || !form.end_time) {
+      setConflictError('Day, start time, and end time are all required.');
+      return;
+    }
+    const conflict = findTimeConflict(allAttractions, form.scheduled_date, form.start_time, form.end_time);
+    if (conflict) {
+      setConflictError(`Conflicts with "${conflict.name}"`);
+      return;
     }
     setConflictError(null);
     setTicketError(null);
@@ -164,7 +166,7 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
           {/* Day */}
           <div>
             <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-              Day
+              Day <span className="text-red-400">*</span>
             </label>
             <select
               value={form.scheduled_date}
@@ -184,7 +186,7 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
             <div className="grid grid-cols-2 gap-5">
               <div>
                 <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-                  Start time
+                  Start time <span className="text-red-400">*</span>
                 </label>
                 <TimeInput
                   value={form.start_time}
@@ -194,7 +196,7 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
               </div>
               <div>
                 <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-                  End time
+                  End time <span className="text-red-400">*</span>
                 </label>
                 <TimeInput
                   value={form.end_time}
@@ -348,7 +350,7 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
             </button>
             <button
               onClick={handleCreate}
-              disabled={isPending || !form.name.trim() || !isOnline}
+              disabled={isPending || !form.name.trim() || !isOnline || !form.scheduled_date || !form.start_time || !form.end_time}
               className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors"
             >
               {isPending ? 'Adding…' : 'Add to trip'}
