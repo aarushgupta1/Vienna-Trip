@@ -87,10 +87,12 @@ export default function MoreMenu({
             See this day on a map
           </button>
 
-          {/* Event reminders */}
+          {/* Event reminders — the menu stays open after any of these so
+              the "on"/"off" state change is visible right away, instead of
+              the menu closing before you can see it took effect. */}
           {notifyPermission === 'default' && (
             <button
-              onClick={() => { onEnableNotifications(); setOpen(false); }}
+              onClick={onEnableNotifications}
               className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               <Bell size={14} className="text-gray-400 dark:text-gray-500" />
@@ -99,7 +101,7 @@ export default function MoreMenu({
           )}
           {notifyPermission === 'granted' && notifySubscribed && (
             <button
-              onClick={() => { onDisableNotifications(); setOpen(false); }}
+              onClick={onDisableNotifications}
               title="You'll get a notification 30 minutes before each event starts, on this device — even if this app isn't open. Click to turn off."
               className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
@@ -110,7 +112,7 @@ export default function MoreMenu({
           )}
           {notifyPermission === 'granted' && !notifySubscribed && (
             <button
-              onClick={() => { onEnableNotifications(); setOpen(false); }}
+              onClick={onEnableNotifications}
               className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               <BellOff size={14} className="text-gray-400 dark:text-gray-500" />
