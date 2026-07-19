@@ -13,6 +13,19 @@ export function generateTripDates(): string[] {
   return dates;
 }
 
+// Used for "duplicate event" — defaults the copy to the following trip day
+// (same time) rather than an exact overlap on the same day, since two
+// same-time events on one day would render stacked directly on top of each
+// other. Falls back to the same date if it's the trip's last day (or isn't
+// a recognized trip date at all), leaving the caller to still run its own
+// conflict check before creating.
+export function nextTripDate(date: string): string {
+  const dates = generateTripDates();
+  const idx = dates.indexOf(date);
+  if (idx === -1 || idx === dates.length - 1) return date;
+  return dates[idx + 1];
+}
+
 export const CATEGORY_COLORS: Record<Category, { bg: string; text: string; border: string; dot: string }> = {
   museum: {
     bg: 'bg-blue-50 dark:bg-blue-950',

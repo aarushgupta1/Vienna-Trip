@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { Attraction, Category } from '@/lib/types';
-import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull, getMapsUrl, timeAgo } from '@/lib/utils';
+import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull, getMapsUrl, nextTripDate, timeAgo } from '@/lib/utils';
 import { getCityForDate } from '@/lib/trip';
-import { updateAttraction, deleteAttraction, removeTicketUrl } from '@/app/actions';
+import { createAttractionObject, updateAttraction, deleteAttraction, removeTicketUrl } from '@/app/actions';
 import { getEditorName } from '@/lib/editorName';
 import { TICKET_IMAGE_EXTENSION_RE, ticketFilename, uploadTicketFile } from '@/lib/tickets';
 import { isTicketFileTooLarge, MAX_TICKET_FILE_SIZE_LABEL } from '@/lib/ticketLimits';
@@ -12,7 +12,7 @@ import { findTimeConflict } from '@/lib/timeUtils';
 import LocationAutocomplete from './LocationAutocomplete';
 import TimeInput from './TimeInput';
 import ConfirmDialog from './ConfirmDialog';
-import { X, Trash2, Save, Upload, FileText, WifiOff, MapPin } from 'lucide-react';
+import { X, Trash2, Save, Copy, Upload, FileText, WifiOff, MapPin } from 'lucide-react';
 
 interface EditModalProps {
   attraction: Attraction;
@@ -20,10 +20,11 @@ interface EditModalProps {
   onClose: () => void;
   onSaved: (updated: Attraction) => void;
   onDeleted: (id: string) => void;
+  onDuplicated: (duplicate: Attraction) => void;
   readOnly?: boolean;
 }
 
-export default function EditModal({ attraction, allAttractions, onClose, onSaved, onDeleted, readOnly = false }: EditModalProps) {
+export default function EditModal({ attraction, allAttractions, onClose, onSaved, onDeleted, onDuplicated, readOnly = false }: EditModalProps) {
   // Legacy unscheduled events (from before the "Unscheduled" option was
   // removed) fall back to the trip's first day rather than an empty value,
   // since every event now needs a real scheduled date.
@@ -47,6 +48,9 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
   const [ticketError, setTicketError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDuplicating, setIsDuplicating] = useState(false);
+  const [duplicateError, setDuplicateError] = useState<string | null>(null);
+  const [duplicateSuccess, setDuplicateSuccess] = useState<string | null>(null);
   // Based on the saved attraction (not the in-progress form edit) since lat/lng
   // only exist once the location has actually been geocoded on a prior save.
   const mapsUrl = getMapsUrl(attraction);
@@ -73,6 +77,56 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
       setDeleteError(err instanceof Error ? err.message : "Couldn't delete — try again.");
       setIsDeleting(false);
     }
+  };
+
+  useEffect(() => {
+    if (!duplicateSuccess) return;
+    const t = setTimeout(() => setDuplicateSuccess(null), 3000);
+    return () => clearTimeout(t);
+  }, [duplicateSuccess]);
+
+  // Duplicates the last-saved event (not any unsaved edits in the form) to
+  // the next trip day at the same time — same reasoning as the required
+  // day/start/end fields: an exact same-day, same-time duplicate would
+  // render stacked directly on top of the original, so "next day" is the
+  // sensible default rather than leaving it unscheduled. The modal stays
+  // open afterward so duplicating a few days in a row (e.g. a recurring
+  // breakfast) doesn't require reopening it each time.
+  const handleDuplicate = () => {
+    setDuplicateError(null);
+    setDuplicateSuccess(null);
+    const targetDate = nextTripDate(attraction.scheduled_date ?? generateTripDates()[0]);
+    if (attraction.start_time) {
+      const conflict = findTimeConflict(allAttractions, targetDate, attraction.start_time, attraction.end_time);
+      if (conflict) {
+        setDuplicateError(`Couldn't duplicate — conflicts with "${conflict.name}" on ${formatDateFull(targetDate)}.`);
+        return;
+      }
+    }
+    setIsDuplicating(true);
+    startTransition(async () => {
+      try {
+        const duplicate = await createAttractionObject(
+          {
+            name: `${attraction.name} (copy)`,
+            description: attraction.description,
+            category: attraction.category,
+            scheduled_date: targetDate,
+            start_time: attraction.start_time,
+            end_time: attraction.end_time,
+            notes: attraction.notes,
+            location: attraction.location,
+          },
+          getEditorName()
+        );
+        onDuplicated(duplicate);
+        setDuplicateSuccess(`Duplicated to ${formatDateFull(targetDate)}.`);
+      } catch (err) {
+        setDuplicateError(err instanceof Error ? err.message : "Couldn't duplicate — try again.");
+      } finally {
+        setIsDuplicating(false);
+      }
+    });
   };
 
   const handleTicketUpload = async (file: File) => {
@@ -205,7 +259,15 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
               className="shrink-0 flex items-center gap-1.5 px-3.5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors"
             >
               <Save size={16} />
-              {isPending ? 'Saving…' : 'Save'}
+              {isPending && !isDuplicating ? 'Saving…' : 'Save'}
+            </button>
+            <button
+              onClick={handleDuplicate}
+              disabled={isPending || isDeleting || readOnly}
+              title="Duplicate to the next day"
+              className="shrink-0 p-2.5 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 rounded-xl transition-colors disabled:opacity-40"
+            >
+              <Copy size={18} />
             </button>
             <button
               onClick={handleDelete}
@@ -216,10 +278,13 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
               <Trash2 size={18} />
             </button>
           </div>
-          {(saveError || deleteError) && (
+          {(saveError || deleteError || duplicateError) && (
             <p className="-mt-2 text-xs text-red-500 dark:text-red-400 font-medium">
-              {saveError || deleteError}
+              {saveError || deleteError || duplicateError}
             </p>
+          )}
+          {duplicateSuccess && (
+            <p className="-mt-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium">{duplicateSuccess}</p>
           )}
 
           {/* Day */}
