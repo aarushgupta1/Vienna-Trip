@@ -1,4 +1,4 @@
-export type Category = 'museum' | 'food' | 'landmark' | 'entertainment' | 'flights' | 'other';
+export type Category = 'museum' | 'food' | 'landmark' | 'entertainment' | 'flights' | 'travel' | 'other';
 
 export interface Attraction {
   id: string;

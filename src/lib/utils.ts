@@ -44,6 +44,12 @@ export const CATEGORY_COLORS: Record<Category, { bg: string; text: string; borde
     border: 'border-sky-200 dark:border-sky-800',
     dot: 'bg-sky-400',
   },
+  travel: {
+    bg: 'bg-teal-50 dark:bg-teal-950',
+    text: 'text-teal-700 dark:text-teal-300',
+    border: 'border-teal-200 dark:border-teal-800',
+    dot: 'bg-teal-400',
+  },
   other: {
     bg: 'bg-gray-50 dark:bg-gray-800',
     text: 'text-gray-600 dark:text-gray-300',
@@ -58,6 +64,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   landmark: 'Landmark',
   entertainment: 'Entertainment',
   flights: 'Flight',
+  travel: 'Travel',
   other: 'Other',
 };
 
@@ -67,6 +74,7 @@ export const CATEGORY_ICONS: Record<Category, string> = {
   landmark: '🏰',
   entertainment: '🎭',
   flights: '✈️',
+  travel: '🚆',
   other: '📍',
 };
 
