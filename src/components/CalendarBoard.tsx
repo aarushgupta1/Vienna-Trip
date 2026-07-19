@@ -551,7 +551,71 @@ export default function CalendarBoard({
                 You&apos;re offline — viewing cached data{lastSynced ? ` from ${timeAgo(lastSynced)}` : ''}, read-only until you&apos;re back online.
               </div>
             )}
-            {/* Universal nav strip — arrows on top for all screen sizes */}
+            {/* Utility bar — search and the less time-critical controls
+                (reminders, timezone) live here, above the main nav strip, so
+                day-to-day navigation isn't competing with them for space. */}
+            <div className="flex items-center justify-between gap-2 bg-gray-50 dark:bg-gray-950/40 border-b border-gray-100 dark:border-gray-800 px-2 py-1 shrink-0">
+              {/* Search/jump — find an event by name or hop straight to any
+                  trip day, without paging through the calendar one screen at
+                  a time. Also reachable via the "/" keyboard shortcut. */}
+              <button
+                onClick={() => setShowSearch(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-gray-500 dark:text-gray-400 text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                title="Search events or jump to a day (/)"
+              >
+                <Search size={13} />
+                <span className="hidden sm:inline">Search</span>
+              </button>
+
+              <div className="flex items-center gap-2">
+                {/* Event reminders — offer to enable once; show a quiet status icon after that */}
+                {notifyPermission === 'default' && (
+                  <button
+                    onClick={enablePushNotifications}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-gray-500 dark:text-gray-400 text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    title="Get a notification 30 minutes before each event starts — delivered even if this app isn't open"
+                  >
+                    <Bell size={13} />
+                    <span className="hidden sm:inline">Alerts</span>
+                  </button>
+                )}
+                {notifyPermission === 'granted' && (
+                  <span
+                    className="flex items-center text-gray-300 dark:text-gray-600"
+                    title="You'll get a notification 30 minutes before each event starts, on this device — even if this app isn't open"
+                  >
+                    <BellRing size={14} />
+                  </span>
+                )}
+                {notifyPermission === 'denied' && (
+                  <span
+                    className="flex items-center text-gray-300 dark:text-gray-600"
+                    title="Notifications are blocked for this site — enable them in your browser's site settings to get 30-minute event alerts"
+                  >
+                    <BellOff size={14} />
+                  </span>
+                )}
+
+                {/* Timezone toggle */}
+                <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-[11px] font-semibold">
+                  <button
+                    onClick={() => setTimezone('vienna')}
+                    title="Local time (Vienna, Salzburg & Prague all share the same time zone)"
+                    className={timezone === 'vienna' ? 'px-2.5 py-1 bg-blue-500 text-white' : 'px-2.5 py-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'}
+                  >
+                    CEST
+                  </button>
+                  <button
+                    onClick={() => setTimezone('eastern')}
+                    className={timezone === 'eastern' ? 'px-2.5 py-1 bg-blue-500 text-white' : 'px-2.5 py-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'}
+                  >
+                    ET
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Main nav strip — sidebar toggle, day navigation, add event, jump to today */}
             <div className="flex items-center bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-2 py-1.5 shrink-0">
               {/* Sidebar toggle — only useful on mobile since sidebar is always visible on desktop */}
               <button
@@ -586,85 +650,30 @@ export default function CalendarBoard({
                 </button>
               </div>
 
-              {/* Search/jump — find an event by name or hop straight to any
-                  trip day, without paging through the calendar one screen at
-                  a time. Also reachable via the "/" keyboard shortcut. */}
-              <button
-                onClick={() => setShowSearch(true)}
-                className="flex items-center gap-1.5 mr-1 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                title="Search events or jump to a day (/)"
-              >
-                <Search size={13} />
-                <span className="hidden sm:inline">Search</span>
-              </button>
-
-              {/* Add event — opens the same modal a grid click would, just without
-                  a slot pre-picked (defaults to today/untimed, editable inside) */}
-              <button
-                onClick={() => setShowQuickAdd(true)}
-                disabled={!isOnline}
-                className="flex items-center gap-1.5 mr-1 px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-xs font-semibold transition-colors"
-                title="Add an event to any day"
-              >
-                <Plus size={13} />
-                <span className="hidden sm:inline">Add Event</span>
-              </button>
-
-              {/* Jump to today — only relevant while the trip is actually underway */}
-              {now && generateTripDates().includes(now.date) && (
+              <div className="flex items-center gap-1">
+                {/* Add event — opens the same modal a grid click would, just without
+                    a slot pre-picked (defaults to today/untimed, editable inside) */}
                 <button
-                  onClick={() => setCurrentPage(pageForDate(now.date, daysPerPage))}
-                  className="flex items-center gap-1.5 mr-1 px-2.5 py-1.5 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors"
-                  title="Jump to today"
+                  onClick={() => setShowQuickAdd(true)}
+                  disabled={!isOnline}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-xs font-semibold transition-colors"
+                  title="Add an event to any day"
                 >
-                  <CalendarDays size={13} />
-                  <span className="hidden sm:inline">Today</span>
+                  <Plus size={13} />
+                  <span className="hidden sm:inline">Add Event</span>
                 </button>
-              )}
 
-              {/* Event reminders — offer to enable once; show a quiet status icon after that */}
-              {notifyPermission === 'default' && (
-                <button
-                  onClick={enablePushNotifications}
-                  className="flex items-center gap-1.5 mr-2 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                  title="Get a notification 30 minutes before each event starts — delivered even if this app isn't open"
-                >
-                  <Bell size={13} />
-                  <span className="hidden sm:inline">Alerts</span>
-                </button>
-              )}
-              {notifyPermission === 'granted' && (
-                <span
-                  className="hidden sm:flex items-center mr-2 text-gray-300 dark:text-gray-600"
-                  title="You'll get a notification 30 minutes before each event starts, on this device — even if this app isn't open"
-                >
-                  <BellRing size={14} />
-                </span>
-              )}
-              {notifyPermission === 'denied' && (
-                <span
-                  className="hidden sm:flex items-center mr-2 text-gray-300 dark:text-gray-600"
-                  title="Notifications are blocked for this site — enable them in your browser's site settings to get 30-minute event alerts"
-                >
-                  <BellOff size={14} />
-                </span>
-              )}
-
-              {/* Timezone toggle */}
-              <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-[11px] font-semibold">
-                <button
-                  onClick={() => setTimezone('vienna')}
-                  title="Local time (Vienna, Salzburg & Prague all share the same time zone)"
-                  className={timezone === 'vienna' ? 'px-2.5 py-1.5 bg-blue-500 text-white' : 'px-2.5 py-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors'}
-                >
-                  CEST
-                </button>
-                <button
-                  onClick={() => setTimezone('eastern')}
-                  className={timezone === 'eastern' ? 'px-2.5 py-1.5 bg-blue-500 text-white' : 'px-2.5 py-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors'}
-                >
-                  ET
-                </button>
+                {/* Jump to today — only relevant while the trip is actually underway */}
+                {now && generateTripDates().includes(now.date) && (
+                  <button
+                    onClick={() => setCurrentPage(pageForDate(now.date, daysPerPage))}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors"
+                    title="Jump to today"
+                  >
+                    <CalendarDays size={13} />
+                    <span className="hidden sm:inline">Today</span>
+                  </button>
+                )}
               </div>
             </div>
 
