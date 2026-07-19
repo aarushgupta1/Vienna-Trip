@@ -705,22 +705,29 @@ export default function CalendarBoard({
                   tell what's coming without paging through the calendar.
                   Clicking it jumps straight to that event. Hidden once
                   there's nothing left to look forward to (e.g. after the
-                  trip's last event has passed). */}
+                  trip's last event has passed). Wrapped in a flex-1
+                  container so it still centers in the space between Search
+                  and More, but the pill itself only grows to fit its
+                  content (capped) rather than stretching full-width — kept
+                  visually quiet (gray, not blue) so it doesn't compete with
+                  actual buttons. */}
               {nextEvent && (
-                <button
-                  onClick={() => {
-                    setCurrentPage(pageForDate(nextEvent.scheduled_date!, daysPerPage));
-                    setEditingAttraction(nextEvent);
-                  }}
-                  className="flex-1 min-w-0 mx-1 flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors"
-                  title={`Up next: ${nextEvent.name}`}
-                >
-                  <ArrowRight size={11} className="shrink-0" />
-                  <span className="text-[11px] font-semibold truncate">{nextEvent.name}</span>
-                  <span className="text-[11px] font-medium opacity-70 shrink-0 tabular-nums">
-                    {formatTimeInZone(nextEvent.start_time!, nextEvent.pin_eastern ? 'eastern' : 'vienna')}
-                  </span>
-                </button>
+                <div className="flex-1 min-w-0 flex justify-center px-1">
+                  <button
+                    onClick={() => {
+                      setCurrentPage(pageForDate(nextEvent.scheduled_date!, daysPerPage));
+                      setEditingAttraction(nextEvent);
+                    }}
+                    className="flex items-center gap-1.5 max-w-[65vw] sm:max-w-[280px] px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    title={`Up next: ${nextEvent.name}`}
+                  >
+                    <ArrowRight size={11} className="shrink-0 text-blue-500 dark:text-blue-400" />
+                    <span className="text-[11px] font-medium truncate">{nextEvent.name}</span>
+                    <span className="text-[11px] opacity-70 shrink-0 tabular-nums">
+                      {formatTimeInZone(nextEvent.start_time!, nextEvent.pin_eastern ? 'eastern' : 'vienna')}
+                    </span>
+                  </button>
+                </div>
               )}
 
               {/* Map, alerts, and the category filter live in one "More"
