@@ -1,7 +1,20 @@
 // Bump this string whenever you deploy significant changes so old caches are cleared.
-const CACHE_NAME = 'vienna-trip-v2';
+const CACHE_NAME = 'vienna-trip-v3';
 
-self.addEventListener('install', () => {
+// The app shell — precached on install so the calendar is viewable offline
+// even on a fresh device that's never loaded it before (as long as install
+// itself ran with a connection at least once, e.g. right after visiting the
+// link for the first time).
+const PRECACHE_URLS = ['/', '/attractions/new', '/icon.svg', '/manifest.webmanifest'];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) =>
+      // allSettled (not addAll) so one failing URL — e.g. a route that isn't
+      // reachable yet — doesn't sink caching of everything else.
+      Promise.allSettled(PRECACHE_URLS.map((url) => cache.add(url)))
+    )
+  );
   self.skipWaiting();
 });
 
@@ -52,6 +65,20 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
+function cacheFirst(request) {
+  return caches.match(request).then(
+    (cached) =>
+      cached ||
+      fetch(request).then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      })
+  );
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -59,24 +86,21 @@ self.addEventListener('fetch', (event) => {
   // Only handle GET requests over http(s)
   if (request.method !== 'GET' || !url.protocol.startsWith('http')) return;
 
-  // Don't cache Supabase API calls — always go live when possible
-  if (url.hostname.includes('supabase.co')) return;
+  // Supabase Storage objects (uploaded ticket files) are immutable once
+  // uploaded — each upload gets its own timestamped path — so they're safe,
+  // and important, to cache: this is what keeps a ticket viewable at the
+  // gate with no signal. Everything else on supabase.co (REST queries,
+  // Realtime) is live trip data and must always go to the network.
+  const isSupabaseStorageObject = url.hostname.includes('supabase.co') && url.pathname.startsWith('/storage/v1/object/');
+  if (url.hostname.includes('supabase.co') && !isSupabaseStorageObject) return;
+  if (isSupabaseStorageObject) {
+    event.respondWith(cacheFirst(request));
+    return;
+  }
 
   // _next/static assets have content hashes — cache first, they never change
   if (url.pathname.startsWith('/_next/static/')) {
-    event.respondWith(
-      caches.match(request).then(
-        (cached) =>
-          cached ||
-          fetch(request).then((response) => {
-            if (response.ok) {
-              const clone = response.clone();
-              caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-            }
-            return response;
-          })
-      )
-    );
+    event.respondWith(cacheFirst(request));
     return;
   }
 

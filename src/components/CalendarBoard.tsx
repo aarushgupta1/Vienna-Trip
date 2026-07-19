@@ -47,6 +47,19 @@ function pageForDate(date: string, daysPerPage: number): number {
   return idx === -1 ? 0 : Math.floor(idx / daysPerPage);
 }
 
+// Rough "how stale is this" phrasing for the offline banner — doesn't need
+// to be precise to the second, just give a sense of scale.
+function timeAgo(ms: number): string {
+  const diffSec = Math.max(0, Math.floor((Date.now() - ms) / 1000));
+  if (diffSec < 60) return 'just now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} min ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr} hr ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  return `${diffDay} day${diffDay === 1 ? '' : 's'} ago`;
+}
+
 function DayHeader({
   date, note, onNoteChange, onNoteCommit, weather, readOnly, isToday,
 }: {
@@ -172,6 +185,7 @@ export default function CalendarBoard({
   const [, startTransition] = useTransition();
   const isOnline = useOnlineStatus();
   const now = useNowInVienna();
+  const [lastSynced, setLastSynced] = useState<number | null>(null);
   // Tracks whether the initial "jump to today's page" has happened yet, so
   // later window resizes fall back to the normal reset-to-page-0 behavior
   // instead of yanking the user back to today every time they resize.
@@ -181,6 +195,22 @@ export default function CalendarBoard({
   useEffect(() => {
     try { setTravelModes(JSON.parse(localStorage.getItem('vienna-travel-modes') ?? '{}')); } catch {}
   }, []);
+
+  // Records the last moment the app was confirmed online, so the offline
+  // banner can tell you how stale the cached view you're looking at is
+  // (rather than just "you're offline" with no sense of when it last synced).
+  useEffect(() => {
+    if (!isOnline) {
+      try {
+        const stored = localStorage.getItem('vienna-last-synced');
+        if (stored) setLastSynced(Number(stored));
+      } catch {}
+      return;
+    }
+    const nowMs = Date.now();
+    try { localStorage.setItem('vienna-last-synced', String(nowMs)); } catch {}
+    setLastSynced(nowMs);
+  }, [isOnline]);
 
   useEffect(() => {
     const update = () => {
@@ -504,7 +534,7 @@ export default function CalendarBoard({
             {!isOnline && (
               <div className="flex items-center justify-center gap-2 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 px-3 py-1.5 text-amber-800 dark:text-amber-300 text-xs shrink-0">
                 <WifiOff size={13} className="shrink-0" />
-                You&apos;re offline — read-only until you&apos;re back online.
+                You&apos;re offline — viewing cached data{lastSynced ? ` from ${timeAgo(lastSynced)}` : ''}, read-only until you&apos;re back online.
               </div>
             )}
             {/* Universal nav strip — arrows on top for all screen sizes */}
