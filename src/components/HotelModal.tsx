@@ -14,7 +14,7 @@ interface HotelModalProps {
   hotel?: Hotel;
   onClose: () => void;
   onSaved: (hotel: Hotel) => void;
-  onDeleted?: (id: string) => void;
+  onDeleted?: (deleted: Hotel) => void;
 }
 
 const CURRENCY_OPTIONS: Currency[] = ['EUR', 'USD'];
@@ -119,8 +119,8 @@ export default function HotelModal({ hotel, onClose, onSaved, onDeleted }: Hotel
     setDeleteError(null);
     setIsDeleting(true);
     try {
-      await deleteHotel(hotel.id);
-      onDeleted?.(hotel.id);
+      const deleted = await deleteHotel(hotel.id);
+      onDeleted?.(deleted);
       onClose();
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : "Couldn't delete — try again.");

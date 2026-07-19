@@ -34,7 +34,7 @@ import { getSupabaseClient } from '@/lib/supabase';
 import { useOnlineStatus } from '@/lib/useOnlineStatus';
 import { getViennaNow, useNowInVienna } from '@/lib/viennaClock';
 import { usePushNotifications } from '@/lib/pushNotifications';
-import { updateAttraction, upsertDayNote } from '@/app/actions';
+import { updateAttraction, upsertDayNote, restoreAttraction, restoreHotel } from '@/app/actions';
 import DayColumn from './DayColumn';
 import HotelsSidebar from './HotelsSidebar';
 import HotelModal from './HotelModal';
@@ -142,6 +142,22 @@ function DayHeader({
   );
 }
 
+// A delete right away, plus a few seconds of holding onto the deleted row so
+// an "Undo" toast can restore it — see handleAttractionDeleted/
+// handleHotelDeleted below for why this deletes for real up front rather
+// than just delaying the server call (durability: closing the tab right
+// after deleting shouldn't leave a "ghost" row nobody else can see was ever
+// removed).
+interface PendingDelete {
+  id: string;
+  kind: 'attraction' | 'hotel';
+  name: string;
+  data: Attraction | Hotel;
+  timeoutId: ReturnType<typeof setTimeout>;
+}
+
+const UNDO_WINDOW_MS = 7000;
+
 export default function CalendarBoard({
   initialAttractions,
   weather,
@@ -173,6 +189,8 @@ export default function CalendarBoard({
   // Doubles as both the drag/resize conflict notice and a generic error toast
   // for failed writes (move, resize, check, day note) — same transient banner.
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [pendingDeletes, setPendingDeletes] = useState<PendingDelete[]>([]);
+  const pendingDeletesRef = useRef<PendingDelete[]>([]);
   // Defaults assume desktop; the resize effect below corrects for the
   // actual viewport right after mount so this can render on the server.
   const [daysPerPage, setDaysPerPage] = useState(DAYS_PER_PAGE);
@@ -256,6 +274,18 @@ export default function CalendarBoard({
     const t = setTimeout(() => setToastMsg(null), 4000);
     return () => clearTimeout(t);
   }, [toastMsg]);
+
+  // Keeps a ref mirror of pendingDeletes so the unmount cleanup below can see
+  // whatever's currently pending without needing to run on every change.
+  useEffect(() => {
+    pendingDeletesRef.current = pendingDeletes;
+  }, [pendingDeletes]);
+
+  useEffect(() => {
+    return () => {
+      pendingDeletesRef.current.forEach((p) => clearTimeout(p.timeoutId));
+    };
+  }, []);
 
   // "/" opens search/jump from anywhere, like most search-heavy apps —
   // except while the user is actually typing into a text field (day notes,
@@ -364,8 +394,12 @@ export default function CalendarBoard({
     });
   };
 
-  const handleHotelDeleted = (id: string) => {
-    setHotels((prev) => prev.filter((h) => h.id !== id));
+  const handleHotelDeleted = (deleted: Hotel) => {
+    setHotels((prev) => prev.filter((h) => h.id !== deleted.id));
+    const timeoutId = setTimeout(() => {
+      setPendingDeletes((prev) => prev.filter((p) => p.id !== deleted.id));
+    }, UNDO_WINDOW_MS);
+    setPendingDeletes((prev) => [...prev, { id: deleted.id, kind: 'hotel', name: deleted.name, data: deleted, timeoutId }]);
   };
 
   const updateDayNote = (date: string, text: string) => {
@@ -524,9 +558,13 @@ export default function CalendarBoard({
     });
   };
 
-  const handleAttractionDeleted = (id: string) => {
-    setAttractions((prev) => prev.filter((a) => a.id !== id));
-    if (editingAttraction?.id === id) setEditingAttraction(null);
+  const handleAttractionDeleted = (deleted: Attraction) => {
+    setAttractions((prev) => prev.filter((a) => a.id !== deleted.id));
+    if (editingAttraction?.id === deleted.id) setEditingAttraction(null);
+    const timeoutId = setTimeout(() => {
+      setPendingDeletes((prev) => prev.filter((p) => p.id !== deleted.id));
+    }, UNDO_WINDOW_MS);
+    setPendingDeletes((prev) => [...prev, { id: deleted.id, kind: 'attraction', name: deleted.name, data: deleted, timeoutId }]);
   };
 
   const handleAttractionUpdated = (updated: Attraction) => {
@@ -535,6 +573,28 @@ export default function CalendarBoard({
 
   const handleAttractionCreated = (attraction: Attraction) => {
     setAttractions((prev) => [...prev, attraction]);
+  };
+
+  // Undoing re-inserts the exact row that was just deleted (same id and
+  // all) — a real database insert, so every other family member's device
+  // just sees it come back through the same realtime INSERT handling that
+  // already exists for brand-new events, no special-casing needed there.
+  const handleUndoDelete = (pending: PendingDelete) => {
+    clearTimeout(pending.timeoutId);
+    setPendingDeletes((prev) => prev.filter((p) => p.id !== pending.id));
+    startTransition(async () => {
+      try {
+        if (pending.kind === 'attraction') {
+          const restored = await restoreAttraction(pending.data as Attraction);
+          handleAttractionCreated(restored);
+        } else {
+          const restored = await restoreHotel(pending.data as Hotel);
+          handleHotelSaved(restored);
+        }
+      } catch {
+        setToastMsg(`Couldn't restore "${pending.name}" — try again.`);
+      }
+    });
   };
 
   return (
@@ -747,6 +807,27 @@ export default function CalendarBoard({
       {toastMsg && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] bg-red-500 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-xl pointer-events-none">
           {toastMsg}
+        </div>
+      )}
+
+      {pendingDeletes.length > 0 && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center gap-2">
+          {pendingDeletes.map((p) => (
+            <div
+              key={p.id}
+              className="flex items-center gap-3 bg-gray-900 dark:bg-gray-700 text-white text-xs font-medium pl-4 pr-2 py-2 rounded-full shadow-xl"
+            >
+              <span>
+                Deleted <span className="font-semibold">&quot;{p.name}&quot;</span>
+              </span>
+              <button
+                onClick={() => handleUndoDelete(p)}
+                className="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 font-bold text-blue-300 hover:text-blue-200 transition-colors"
+              >
+                Undo
+              </button>
+            </div>
+          ))}
         </div>
       )}
 

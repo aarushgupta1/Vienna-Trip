@@ -117,10 +117,23 @@ export async function searchLocations(query: string): Promise<GeocodeSuggestion[
   return searchLocationsGeo(query);
 }
 
-export async function deleteAttraction(id: string): Promise<void> {
-  const { error } = await getSupabase().from('attractions').delete().eq('id', id);
+// Returns the deleted row (rather than void) so callers can offer an "Undo"
+// that re-inserts it — see restoreAttraction below.
+export async function deleteAttraction(id: string): Promise<Attraction> {
+  const { data, error } = await getSupabase().from('attractions').delete().eq('id', id).select().single();
   if (error) throw new Error(error.message);
   revalidatePath('/');
+  return data as Attraction;
+}
+
+// Used only by the "Undo" toast right after a delete — re-inserts the exact
+// row (same id and all) so realtime INSERT handling on every device just
+// picks it back up like any other new event, no special-casing needed.
+export async function restoreAttraction(attraction: Attraction): Promise<Attraction> {
+  const { data, error } = await getSupabase().from('attractions').insert(attraction).select().single();
+  if (error) throw new Error(error.message);
+  revalidatePath('/');
+  return data as Attraction;
 }
 
 export async function addTicketUrl(id: string, url: string): Promise<void> {
@@ -256,10 +269,22 @@ export async function updateHotel(
   revalidatePath('/');
 }
 
-export async function deleteHotel(id: string): Promise<void> {
-  const { error } = await getSupabase().from('hotels').delete().eq('id', id);
+// Returns the deleted row (rather than void) so callers can offer an "Undo"
+// that re-inserts it — see restoreHotel below.
+export async function deleteHotel(id: string): Promise<Hotel> {
+  const { data, error } = await getSupabase().from('hotels').delete().eq('id', id).select().single();
   if (error) throw new Error(error.message);
   revalidatePath('/');
+  return data as Hotel;
+}
+
+// Used only by the "Undo" toast right after a delete — re-inserts the exact
+// row (same id and all).
+export async function restoreHotel(hotel: Hotel): Promise<Hotel> {
+  const { data, error } = await getSupabase().from('hotels').insert(hotel).select().single();
+  if (error) throw new Error(error.message);
+  revalidatePath('/');
+  return data as Hotel;
 }
 
 // Registers (or re-registers) this device's push subscription so

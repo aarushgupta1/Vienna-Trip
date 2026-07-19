@@ -19,7 +19,7 @@ interface EditModalProps {
   allAttractions: Attraction[];
   onClose: () => void;
   onSaved: (updated: Attraction) => void;
-  onDeleted: (id: string) => void;
+  onDeleted: (deleted: Attraction) => void;
   onDuplicated: (duplicate: Attraction) => void;
   readOnly?: boolean;
 }
@@ -51,6 +51,8 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
   const [isDuplicating, setIsDuplicating] = useState(false);
   const [duplicateError, setDuplicateError] = useState<string | null>(null);
   const [duplicateSuccess, setDuplicateSuccess] = useState<string | null>(null);
+  const [showDuplicatePicker, setShowDuplicatePicker] = useState(false);
+  const [duplicateDate, setDuplicateDate] = useState('');
   // Based on the saved attraction (not the in-progress form edit) since lat/lng
   // only exist once the location has actually been geocoded on a prior save.
   const mapsUrl = getMapsUrl(attraction);
@@ -70,8 +72,8 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
     setDeleteError(null);
     setIsDeleting(true);
     try {
-      await deleteAttraction(attraction.id);
-      onDeleted(attraction.id);
+      const deleted = await deleteAttraction(attraction.id);
+      onDeleted(deleted);
       onClose();
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : "Couldn't delete — try again.");
@@ -85,17 +87,25 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
     return () => clearTimeout(t);
   }, [duplicateSuccess]);
 
+  // Opens the inline "duplicate to..." picker, defaulting to the next trip
+  // day (same reasoning as the required day/start/end fields: an exact
+  // same-day, same-time duplicate would render stacked directly on top of
+  // the original) — but lets you pick any day instead, since a duplicate
+  // isn't always meant to land exactly one day later.
+  const openDuplicatePicker = () => {
+    setDuplicateError(null);
+    setDuplicateSuccess(null);
+    setDuplicateDate(nextTripDate(attraction.scheduled_date ?? generateTripDates()[0]));
+    setShowDuplicatePicker(true);
+  };
+
   // Duplicates the last-saved event (not any unsaved edits in the form) to
-  // the next trip day at the same time — same reasoning as the required
-  // day/start/end fields: an exact same-day, same-time duplicate would
-  // render stacked directly on top of the original, so "next day" is the
-  // sensible default rather than leaving it unscheduled. The modal stays
-  // open afterward so duplicating a few days in a row (e.g. a recurring
+  // whichever day is picked above. The modal stays open afterward so
+  // duplicating to a few different days in a row (e.g. a recurring
   // breakfast) doesn't require reopening it each time.
   const handleDuplicate = () => {
     setDuplicateError(null);
-    setDuplicateSuccess(null);
-    const targetDate = nextTripDate(attraction.scheduled_date ?? generateTripDates()[0]);
+    const targetDate = duplicateDate;
     if (attraction.start_time) {
       const conflict = findTimeConflict(allAttractions, targetDate, attraction.start_time, attraction.end_time);
       if (conflict) {
@@ -121,6 +131,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
         );
         onDuplicated(duplicate);
         setDuplicateSuccess(`Duplicated to ${formatDateFull(targetDate)}.`);
+        setShowDuplicatePicker(false);
       } catch (err) {
         setDuplicateError(err instanceof Error ? err.message : "Couldn't duplicate — try again.");
       } finally {
@@ -262,10 +273,15 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
               {isPending && !isDuplicating ? 'Saving…' : 'Save'}
             </button>
             <button
-              onClick={handleDuplicate}
+              onClick={() => (showDuplicatePicker ? setShowDuplicatePicker(false) : openDuplicatePicker())}
               disabled={isPending || isDeleting || readOnly}
-              title="Duplicate to the next day"
-              className="shrink-0 p-2.5 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 rounded-xl transition-colors disabled:opacity-40"
+              title="Duplicate to another day"
+              className={[
+                'shrink-0 p-2.5 rounded-xl transition-colors disabled:opacity-40',
+                showDuplicatePicker
+                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40'
+                  : 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300',
+              ].join(' ')}
             >
               <Copy size={18} />
             </button>
@@ -278,6 +294,40 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
               <Trash2 size={18} />
             </button>
           </div>
+
+          {showDuplicatePicker && (
+            <div className="-mt-2 flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 shrink-0">
+                Duplicate to
+              </label>
+              <select
+                value={duplicateDate}
+                onChange={(e) => setDuplicateDate(e.target.value)}
+                className="flex-1 min-w-0 px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {generateTripDates().map((d) => (
+                  <option key={d} value={d}>
+                    {formatDateFull(d)} — {getCityForDate(d)}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={handleDuplicate}
+                disabled={isPending}
+                className="shrink-0 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold transition-colors"
+              >
+                {isPending && isDuplicating ? 'Duplicating…' : 'Duplicate'}
+              </button>
+              <button
+                onClick={() => setShowDuplicatePicker(false)}
+                title="Cancel"
+                className="shrink-0 p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg transition-colors"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+
           {(saveError || deleteError || duplicateError) && (
             <p className="-mt-2 text-xs text-red-500 dark:text-red-400 font-medium">
               {saveError || deleteError || duplicateError}

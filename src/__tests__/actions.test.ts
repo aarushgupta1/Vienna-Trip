@@ -152,15 +152,33 @@ describe('deleteAttraction', () => {
   beforeEach(setEnv);
   afterEach(clearEnv);
 
-  it('resolves without error on success', async () => {
-    mockResult = { data: null, error: null };
+  it('resolves with the deleted row on success', async () => {
+    mockResult = { data: SAMPLE, error: null };
     const { deleteAttraction } = await import('@/app/actions');
-    await expect(deleteAttraction('abc-123')).resolves.toBeUndefined();
+    await expect(deleteAttraction('abc-123')).resolves.toEqual(SAMPLE);
   });
 
   it('throws when Supabase returns an error', async () => {
     mockResult = { data: null, error: { message: 'permission denied' } };
     const { deleteAttraction } = await import('@/app/actions');
     await expect(deleteAttraction('abc-123')).rejects.toThrow('permission denied');
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe('restoreAttraction', () => {
+  beforeEach(setEnv);
+  afterEach(clearEnv);
+
+  it('resolves with the re-inserted row on success', async () => {
+    mockResult = { data: SAMPLE, error: null };
+    const { restoreAttraction } = await import('@/app/actions');
+    await expect(restoreAttraction(SAMPLE)).resolves.toEqual(SAMPLE);
+  });
+
+  it('throws when Supabase returns an error', async () => {
+    mockResult = { data: null, error: { message: 'duplicate key value' } };
+    const { restoreAttraction } = await import('@/app/actions');
+    await expect(restoreAttraction(SAMPLE)).rejects.toThrow('duplicate key value');
   });
 });
