@@ -36,6 +36,7 @@ export async function createAttractionObject(
     end_time: string | null;
     notes: string | null;
     location: string | null;
+    pin_eastern?: boolean;
   },
   editedBy?: string | null
 ): Promise<Attraction> {
@@ -74,7 +75,7 @@ export async function scheduleAttraction(id: string, scheduledDate: string | nul
 
 export async function updateAttraction(
   id: string,
-  data: Partial<Pick<Attraction, 'name' | 'description' | 'category' | 'scheduled_date' | 'start_time' | 'end_time' | 'notes' | 'location'>>,
+  data: Partial<Pick<Attraction, 'name' | 'description' | 'category' | 'scheduled_date' | 'start_time' | 'end_time' | 'notes' | 'location' | 'pin_eastern'>>,
   editedBy?: string | null
 ): Promise<void> {
   // Callers only pass `location` when it actually changed, so re-geocoding

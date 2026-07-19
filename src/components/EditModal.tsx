@@ -37,6 +37,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
     end_time: attraction.end_time ?? '',
     notes: attraction.notes ?? '',
     location: attraction.location ?? '',
+    pin_eastern: attraction.pin_eastern,
   };
   const [form, setForm] = useState(initialForm);
   const [isPending, startTransition] = useTransition();
@@ -155,6 +156,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
               end_time: attraction.end_time,
               notes: attraction.notes,
               location: attraction.location,
+              pin_eastern: attraction.pin_eastern,
             },
             getEditorName()
           );
@@ -247,6 +249,7 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
         start_time: form.start_time || null,
         end_time: form.end_time || null,
         notes: form.notes || null,
+        pin_eastern: form.pin_eastern,
       };
       // Only send location when it actually changed, so the server doesn't
       // re-geocode on every save (e.g. just moving the time).
@@ -489,6 +492,18 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
                 </label>
               ))}
             </div>
+            {form.category === 'flights' && (
+              <label className={['flex items-center gap-2 mt-2 px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-xs text-gray-600 dark:text-gray-300', readOnly ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'].join(' ')}>
+                <input
+                  type="checkbox"
+                  checked={form.pin_eastern}
+                  onChange={(e) => setForm((f) => ({ ...f, pin_eastern: e.target.checked }))}
+                  disabled={readOnly}
+                  className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                />
+                Show this event in Eastern time (ET), regardless of the calendar&apos;s CEST/ET toggle
+              </label>
+            )}
           </div>
 
           {/* Location */}

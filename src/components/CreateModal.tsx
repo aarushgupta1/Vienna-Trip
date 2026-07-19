@@ -44,6 +44,7 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
     start_time: defaultStartTime,
     end_time: defaultEndTime,
     location: '',
+    pin_eastern: false,
   };
   const [form, setForm] = useState(initialForm);
   const [pendingTickets, setPendingTickets] = useState<File[]>([]);
@@ -94,6 +95,7 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
             end_time: form.end_time || null,
             notes: null,
             location: form.location.trim() || null,
+            pin_eastern: form.pin_eastern,
           },
           getEditorName()
         );
@@ -238,6 +240,17 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
                 </label>
               ))}
             </div>
+            {form.category === 'flights' && (
+              <label className="flex items-center gap-2 mt-2 px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-xs text-gray-600 dark:text-gray-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.pin_eastern}
+                  onChange={(e) => setForm((f) => ({ ...f, pin_eastern: e.target.checked }))}
+                  className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                />
+                Show this event in Eastern time (ET), regardless of the calendar&apos;s CEST/ET toggle
+              </label>
+            )}
           </div>
 
           {/* Location */}

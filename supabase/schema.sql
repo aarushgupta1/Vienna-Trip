@@ -49,6 +49,13 @@ alter table attractions drop column if exists is_checked;
 alter table attractions add column if not exists edited_by text;
 alter table attractions add column if not exists updated_at timestamptz default now();
 
+-- Lets one specific event (in practice, a flight home) always render in
+-- Eastern time on the calendar regardless of the CEST/ET display toggle,
+-- while every other event keeps following that toggle as before — added
+-- because a single global toggle can't represent "this one thing is
+-- naturally ET, everything else is naturally CEST" at the same time.
+alter table attractions add column if not exists pin_eastern boolean not null default false;
+
 -- Enable Row Level Security
 alter table attractions enable row level security;
 

@@ -820,7 +820,7 @@ export default function CalendarBoard({
             const w = activeAttraction.start_time ? colWidth : 208;
             return (
               <div style={{ width: w }} className="pointer-events-none">
-                <AttractionBlock attraction={activeAttraction} isOverlay height={h} timezone={timezone} />
+                <AttractionBlock attraction={activeAttraction} isOverlay height={h} timezone={activeAttraction.pin_eastern ? 'eastern' : timezone} />
               </div>
             );
           })()}
