@@ -2,9 +2,10 @@
 
 import { useState, useTransition } from 'react';
 import { Attraction, Category } from '@/lib/types';
-import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull, getMapsUrl } from '@/lib/utils';
+import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull, getMapsUrl, timeAgo } from '@/lib/utils';
 import { getCityForDate } from '@/lib/trip';
 import { updateAttraction, deleteAttraction, removeTicketUrl } from '@/app/actions';
+import { getEditorName } from '@/lib/editorName';
 import { TICKET_IMAGE_EXTENSION_RE, ticketFilename, uploadTicketFile } from '@/lib/tickets';
 import { isTicketFileTooLarge, MAX_TICKET_FILE_SIZE_LABEL } from '@/lib/ticketLimits';
 import { findTimeConflict } from '@/lib/timeUtils';
@@ -136,8 +137,9 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
         patch.location = trimmedLocation;
       }
       try {
-        await updateAttraction(attraction.id, patch);
-        onSaved({ ...attraction, ...patch });
+        const editedBy = getEditorName();
+        await updateAttraction(attraction.id, patch, editedBy);
+        onSaved({ ...attraction, ...patch, edited_by: editedBy, updated_at: new Date().toISOString() });
       } catch (err) {
         setSaveError(err instanceof Error ? err.message : "Couldn't save — try again.");
       }
@@ -168,6 +170,12 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
           <div className="flex items-center gap-2 px-6 py-2 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs">
             <WifiOff size={13} className="shrink-0" />
             You&apos;re offline — read-only until you&apos;re back online.
+          </div>
+        )}
+
+        {attraction.edited_by && (
+          <div className="px-6 pt-3 text-[11px] text-gray-400 dark:text-gray-500">
+            Last edited by <span className="font-medium text-gray-500 dark:text-gray-400">{attraction.edited_by}</span> · {timeAgo(new Date(attraction.updated_at).getTime())}
           </div>
         )}
 

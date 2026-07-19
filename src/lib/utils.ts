@@ -95,6 +95,20 @@ export function formatDateShort(dateStr: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 
+// Rough "how long ago" phrasing — used for the offline banner's "last
+// synced" note and for "last edited by ___" attribution. Doesn't need to be
+// precise to the second, just give a sense of scale.
+export function timeAgo(ms: number): string {
+  const diffSec = Math.max(0, Math.floor((Date.now() - ms) / 1000));
+  if (diffSec < 60) return 'just now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} min ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr} hr ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  return `${diffDay} day${diffDay === 1 ? '' : 's'} ago`;
+}
+
 export function formatTime(timeStr: string): string {
   const [hours, minutes] = timeStr.split(':').map(Number);
   const ampm = hours >= 12 ? 'PM' : 'AM';

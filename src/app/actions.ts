@@ -45,6 +45,8 @@ export async function createAttraction(formData: FormData): Promise<void> {
       location,
       lat: geo?.lat ?? null,
       lng: geo?.lng ?? null,
+      edited_by: (formData.get('edited_by') as string) || null,
+      updated_at: new Date().toISOString(),
     })
     .select('id')
     .single();
@@ -76,21 +78,30 @@ export async function createAttraction(formData: FormData): Promise<void> {
   revalidatePath('/');
 }
 
-export async function createAttractionObject(data: {
-  name: string;
-  description: string | null;
-  category: Category;
-  scheduled_date: string | null;
-  start_time: string | null;
-  end_time: string | null;
-  notes: string | null;
-  location: string | null;
-}): Promise<Attraction> {
+export async function createAttractionObject(
+  data: {
+    name: string;
+    description: string | null;
+    category: Category;
+    scheduled_date: string | null;
+    start_time: string | null;
+    end_time: string | null;
+    notes: string | null;
+    location: string | null;
+  },
+  editedBy?: string | null
+): Promise<Attraction> {
   const geo = data.location ? await geocodeAddress(data.location) : null;
 
   const { data: row, error } = await getSupabase()
     .from('attractions')
-    .insert({ ...data, lat: geo?.lat ?? null, lng: geo?.lng ?? null })
+    .insert({
+      ...data,
+      lat: geo?.lat ?? null,
+      lng: geo?.lng ?? null,
+      edited_by: editedBy ?? null,
+      updated_at: new Date().toISOString(),
+    })
     .select()
     .single();
   if (error) throw new Error(error.message);
@@ -115,11 +126,12 @@ export async function scheduleAttraction(id: string, scheduledDate: string | nul
 
 export async function updateAttraction(
   id: string,
-  data: Partial<Pick<Attraction, 'name' | 'description' | 'category' | 'scheduled_date' | 'start_time' | 'end_time' | 'notes' | 'location'>>
+  data: Partial<Pick<Attraction, 'name' | 'description' | 'category' | 'scheduled_date' | 'start_time' | 'end_time' | 'notes' | 'location'>>,
+  editedBy?: string | null
 ): Promise<void> {
   // Callers only pass `location` when it actually changed, so re-geocoding
   // here doesn't fire on every unrelated edit (e.g. just moving the time).
-  const patch: Record<string, unknown> = { ...data };
+  const patch: Record<string, unknown> = { ...data, edited_by: editedBy ?? null, updated_at: new Date().toISOString() };
   if ('location' in patch) {
     const location = (patch.location as string | null) || null;
     const geo = location ? await geocodeAddress(location) : null;
@@ -212,7 +224,7 @@ export async function getDayNotes(): Promise<Record<string, string>> {
   return Object.fromEntries(((data ?? []) as DayNote[]).map((row) => [row.date, row.note]));
 }
 
-export async function upsertDayNote(date: string, note: string): Promise<void> {
+export async function upsertDayNote(date: string, note: string, editedBy?: string | null): Promise<void> {
   const supabase = getSupabase();
 
   // Empty notes are deleted rather than stored, so the table doesn't fill
@@ -221,7 +233,9 @@ export async function upsertDayNote(date: string, note: string): Promise<void> {
     const { error } = await supabase.from('day_notes').delete().eq('date', date);
     if (error) throw new Error(error.message);
   } else {
-    const { error } = await supabase.from('day_notes').upsert({ date, note }, { onConflict: 'date' });
+    const { error } = await supabase
+      .from('day_notes')
+      .upsert({ date, note, edited_by: editedBy ?? null, updated_at: new Date().toISOString() }, { onConflict: 'date' });
     if (error) throw new Error(error.message);
   }
 
@@ -242,21 +256,30 @@ export async function getHotels(): Promise<Hotel[]> {
   return (data ?? []) as Hotel[];
 }
 
-export async function createHotel(data: {
-  name: string;
-  location: string | null;
-  check_in: string | null;
-  check_out: string | null;
-  price: number | null;
-  currency: Currency;
-  confirmation_number: string | null;
-  notes: string | null;
-}): Promise<Hotel> {
+export async function createHotel(
+  data: {
+    name: string;
+    location: string | null;
+    check_in: string | null;
+    check_out: string | null;
+    price: number | null;
+    currency: Currency;
+    confirmation_number: string | null;
+    notes: string | null;
+  },
+  editedBy?: string | null
+): Promise<Hotel> {
   const geo = data.location ? await geocodeAddress(data.location) : null;
 
   const { data: row, error } = await getSupabase()
     .from('hotels')
-    .insert({ ...data, lat: geo?.lat ?? null, lng: geo?.lng ?? null })
+    .insert({
+      ...data,
+      lat: geo?.lat ?? null,
+      lng: geo?.lng ?? null,
+      edited_by: editedBy ?? null,
+      updated_at: new Date().toISOString(),
+    })
     .select()
     .single();
   if (error) throw new Error(error.message);
@@ -266,11 +289,12 @@ export async function createHotel(data: {
 
 export async function updateHotel(
   id: string,
-  data: Partial<Pick<Hotel, 'name' | 'location' | 'check_in' | 'check_out' | 'price' | 'currency' | 'confirmation_number' | 'notes'>>
+  data: Partial<Pick<Hotel, 'name' | 'location' | 'check_in' | 'check_out' | 'price' | 'currency' | 'confirmation_number' | 'notes'>>,
+  editedBy?: string | null
 ): Promise<void> {
   // Only re-geocode when the location actually changed, same reasoning as
   // updateAttraction — callers only pass `location` when it's different.
-  const patch: Record<string, unknown> = { ...data };
+  const patch: Record<string, unknown> = { ...data, edited_by: editedBy ?? null, updated_at: new Date().toISOString() };
   if ('location' in patch) {
     const location = (patch.location as string | null) || null;
     const geo = location ? await geocodeAddress(location) : null;

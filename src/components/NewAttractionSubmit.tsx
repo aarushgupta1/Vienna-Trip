@@ -1,6 +1,8 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useOnlineStatus } from '@/lib/useOnlineStatus';
+import { getEditorName } from '@/lib/editorName';
 import { WifiOff } from 'lucide-react';
 
 export function OfflineFormBanner() {
@@ -12,6 +14,17 @@ export function OfflineFormBanner() {
       You&apos;re offline — this can&apos;t be submitted until you&apos;re back online.
     </div>
   );
+}
+
+// Plain server-action forms have no client state to read localStorage from
+// at submit time, so this stashes the device's editor name into a hidden
+// field once on mount instead.
+export function EditedByField() {
+  const [name, setName] = useState('');
+  useEffect(() => {
+    setName(getEditorName() ?? '');
+  }, []);
+  return <input type="hidden" name="edited_by" value={name} readOnly />;
 }
 
 export function NewAttractionSubmitButton() {

@@ -5,7 +5,7 @@ import { getCityForDate } from '@/lib/trip';
 import { Category } from '@/lib/types';
 import LocationAutocomplete from '@/components/LocationAutocomplete';
 import TimeInput from '@/components/TimeInput';
-import { OfflineFormBanner, NewAttractionSubmitButton } from '@/components/NewAttractionSubmit';
+import { OfflineFormBanner, NewAttractionSubmitButton, EditedByField } from '@/components/NewAttractionSubmit';
 import TicketUploadField from '@/components/TicketUploadField';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -38,6 +38,7 @@ export default function NewAttractionPage() {
           <OfflineFormBanner />
 
           <form action={handleSubmit} encType="multipart/form-data" className="space-y-5">
+            <EditedByField />
             <div>
               <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
                 Name <span className="text-red-400 normal-case font-normal">required</span>

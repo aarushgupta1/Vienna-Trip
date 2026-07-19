@@ -13,12 +13,15 @@ export interface Attraction {
   lat: number | null;
   lng: number | null;
   ticket_urls: string[]; // uploaded ticket files (images/PDFs) in Supabase Storage
+  edited_by: string | null; // self-chosen display name of whoever last saved this — no auth, not verified
+  updated_at: string;
   created_at: string;
 }
 
 export interface DayNote {
   date: string; // YYYY-MM-DD
   note: string;
+  edited_by: string | null;
   updated_at: string;
 }
 
@@ -36,5 +39,7 @@ export interface Hotel {
   currency: Currency;
   confirmation_number: string | null;
   notes: string | null;
+  edited_by: string | null;
+  updated_at: string;
   created_at: string;
 }

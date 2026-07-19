@@ -13,7 +13,8 @@ import {
 } from '@dnd-kit/core';
 import { useState, useTransition, useEffect, useRef } from 'react';
 import { Attraction, DayNote, Hotel } from '@/lib/types';
-import { generateTripDates, formatDate } from '@/lib/utils';
+import { generateTripDates, formatDate, timeAgo } from '@/lib/utils';
+import { getEditorName } from '@/lib/editorName';
 import { getCityForDate, CITY_COLORS } from '@/lib/trip';
 import { DayWeather, weatherCodeInfo } from '@/lib/weather';
 import { TravelSegment, TravelMode } from '@/lib/travel';
@@ -47,18 +48,6 @@ function pageForDate(date: string, daysPerPage: number): number {
   return idx === -1 ? 0 : Math.floor(idx / daysPerPage);
 }
 
-// Rough "how stale is this" phrasing for the offline banner — doesn't need
-// to be precise to the second, just give a sense of scale.
-function timeAgo(ms: number): string {
-  const diffSec = Math.max(0, Math.floor((Date.now() - ms) / 1000));
-  if (diffSec < 60) return 'just now';
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin} min ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr} hr ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  return `${diffDay} day${diffDay === 1 ? '' : 's'} ago`;
-}
 
 function DayHeader({
   date, note, onNoteChange, onNoteCommit, weather, readOnly, isToday,
@@ -343,7 +332,7 @@ export default function CalendarBoard({
   const commitDayNote = (date: string, text: string) => {
     startTransition(async () => {
       try {
-        await upsertDayNote(date, text);
+        await upsertDayNote(date, text, getEditorName());
       } catch {
         setToastMsg("Couldn't save day note — check your connection and try again.");
       }
@@ -453,11 +442,15 @@ export default function CalendarBoard({
 
     startTransition(async () => {
       try {
-        await updateAttraction(attractionId, {
-          scheduled_date: newDate,
-          start_time: newStartTime,
-          end_time: newEndTime,
-        });
+        await updateAttraction(
+          attractionId,
+          {
+            scheduled_date: newDate,
+            start_time: newStartTime,
+            end_time: newEndTime,
+          },
+          getEditorName()
+        );
       } catch {
         // Roll back to where it was before the drag — otherwise the card sits
         // in its new spot on this screen while the database still has the old
@@ -477,7 +470,7 @@ export default function CalendarBoard({
     );
     startTransition(async () => {
       try {
-        await updateAttraction(id, { end_time: newEndTime });
+        await updateAttraction(id, { end_time: newEndTime }, getEditorName());
       } catch {
         setAttractions((prev) => prev.map((a) => (a.id === id ? { ...a, end_time: previousEndTime } : a)));
         setToastMsg("Couldn't resize — check your connection and try again.");

@@ -42,6 +42,13 @@ alter table attractions add column if not exists ticket_urls text[] not null def
 -- database that still has it from before. Safe to re-run either way.
 alter table attractions drop column if exists is_checked;
 
+-- Attribution: the self-chosen display name of whoever last created/edited
+-- this row, and when — shown as "last edited by ___" in the edit modal.
+-- There's no auth in this app, so this is just a label passed along with
+-- each write from the browser's local storage; nothing here is verified.
+alter table attractions add column if not exists edited_by text;
+alter table attractions add column if not exists updated_at timestamptz default now();
+
 -- Enable Row Level Security
 alter table attractions enable row level security;
 
@@ -99,6 +106,10 @@ create table if not exists hotels (
   created_at          timestamptz default now()
 );
 
+-- Same "last edited by ___" attribution as attractions (see comment above).
+alter table hotels add column if not exists edited_by text;
+alter table hotels add column if not exists updated_at timestamptz default now();
+
 alter table hotels enable row level security;
 
 drop policy if exists "public_select" on hotels;
@@ -124,6 +135,10 @@ create table if not exists day_notes (
   note       text not null default '',
   updated_at timestamptz default now()
 );
+
+-- Same "last edited by ___" attribution as attractions/hotels (not currently
+-- surfaced in the UI for day notes, just recorded for later use).
+alter table day_notes add column if not exists edited_by text;
 
 alter table day_notes enable row level security;
 

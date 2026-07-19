@@ -1,6 +1,7 @@
 import { getAttractions, getDayNotes, getHotels } from './actions';
 import CalendarBoard from '@/components/CalendarBoardClient';
 import ThemeToggle from '@/components/ThemeToggle';
+import EditorNameBadge from '@/components/EditorNameBadge';
 import { generateTripDates } from '@/lib/utils';
 import { getWeatherForDates } from '@/lib/weather';
 import { getTravelSegments } from '@/lib/travel';
@@ -27,7 +28,8 @@ export default async function HomePage() {
             <span className="hidden sm:inline ml-2 text-xs text-gray-400 dark:text-gray-500">Aug 6 – 16, 2026</span>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <EditorNameBadge />
           <Link
             href="/attractions/new"
             className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors"

@@ -5,6 +5,7 @@ import { Attraction, Category } from '@/lib/types';
 import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull } from '@/lib/utils';
 import { getCityForDate } from '@/lib/trip';
 import { createAttractionObject } from '@/app/actions';
+import { getEditorName } from '@/lib/editorName';
 import { TICKET_IMAGE_EXTENSION_RE, uploadTicketFile } from '@/lib/tickets';
 import { isTicketFileTooLarge, MAX_TICKET_FILE_SIZE_LABEL } from '@/lib/ticketLimits';
 import { minutesToTime, timeToMinutes, DEFAULT_DURATION_MINUTES, findTimeConflict } from '@/lib/timeUtils';
@@ -72,16 +73,19 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
     startTransition(async () => {
       let attraction;
       try {
-        attraction = await createAttractionObject({
-          name: form.name.trim(),
-          description: form.description || null,
-          category: form.category,
-          scheduled_date: form.scheduled_date || null,
-          start_time: form.start_time || null,
-          end_time: form.end_time || null,
-          notes: null,
-          location: form.location.trim() || null,
-        });
+        attraction = await createAttractionObject(
+          {
+            name: form.name.trim(),
+            description: form.description || null,
+            category: form.category,
+            scheduled_date: form.scheduled_date || null,
+            start_time: form.start_time || null,
+            end_time: form.end_time || null,
+            notes: null,
+            location: form.location.trim() || null,
+          },
+          getEditorName()
+        );
       } catch (err) {
         setCreateError(err instanceof Error ? err.message : "Couldn't save — try again.");
         return;

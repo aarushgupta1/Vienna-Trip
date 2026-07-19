@@ -3,7 +3,8 @@
 import { useState, useTransition } from 'react';
 import { Hotel, Currency } from '@/lib/types';
 import { createHotel, updateHotel, deleteHotel } from '@/app/actions';
-import { getMapsUrl } from '@/lib/utils';
+import { getMapsUrl, timeAgo } from '@/lib/utils';
+import { getEditorName } from '@/lib/editorName';
 import { useOnlineStatus } from '@/lib/useOnlineStatus';
 import LocationAutocomplete from './LocationAutocomplete';
 import ConfirmDialog from './ConfirmDialog';
@@ -74,6 +75,7 @@ export default function HotelModal({ hotel, onClose, onSaved, onDeleted }: Hotel
 
     startTransition(async () => {
       try {
+        const editedBy = getEditorName();
         if (hotel) {
           const patch: Partial<Hotel> = {
             name: form.name.trim(),
@@ -87,19 +89,22 @@ export default function HotelModal({ hotel, onClose, onSaved, onDeleted }: Hotel
           // Only send location when it actually changed, so the server
           // doesn't re-geocode on every save (same reasoning as attractions).
           if (trimmedLocation !== hotel.location) patch.location = trimmedLocation;
-          await updateHotel(hotel.id, patch);
-          onSaved({ ...hotel, ...patch });
+          await updateHotel(hotel.id, patch, editedBy);
+          onSaved({ ...hotel, ...patch, edited_by: editedBy, updated_at: new Date().toISOString() });
         } else {
-          const created = await createHotel({
-            name: form.name.trim(),
-            location: trimmedLocation,
-            check_in: checkIn,
-            check_out: checkOut,
-            price,
-            currency: form.currency,
-            confirmation_number: confirmationNumber,
-            notes,
-          });
+          const created = await createHotel(
+            {
+              name: form.name.trim(),
+              location: trimmedLocation,
+              check_in: checkIn,
+              check_out: checkOut,
+              price,
+              currency: form.currency,
+              confirmation_number: confirmationNumber,
+              notes,
+            },
+            editedBy
+          );
           onSaved(created);
         }
         onClose();
@@ -147,6 +152,12 @@ export default function HotelModal({ hotel, onClose, onSaved, onDeleted }: Hotel
           <div className="flex items-center gap-2 px-6 py-2 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs">
             <WifiOff size={13} className="shrink-0" />
             You&apos;re offline — read-only until you&apos;re back online.
+          </div>
+        )}
+
+        {hotel?.edited_by && (
+          <div className="px-6 pt-3 text-[11px] text-gray-400 dark:text-gray-500">
+            Last edited by <span className="font-medium text-gray-500 dark:text-gray-400">{hotel.edited_by}</span> · {timeAgo(new Date(hotel.updated_at).getTime())}
           </div>
         )}
 
