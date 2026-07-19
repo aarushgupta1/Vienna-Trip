@@ -3,6 +3,7 @@ import CalendarBoard from '@/components/CalendarBoardClient';
 import ThemeToggle from '@/components/ThemeToggle';
 import EditorNameBadge from '@/components/EditorNameBadge';
 import PresenceIndicator from '@/components/PresenceIndicator';
+import InstallPrompt from '@/components/InstallPrompt';
 import { generateTripDates } from '@/lib/utils';
 import { getWeatherForDates } from '@/lib/weather';
 import { getTravelSegments } from '@/lib/travel';
@@ -29,6 +30,7 @@ export default async function HomePage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <InstallPrompt />
           <PresenceIndicator />
           <EditorNameBadge />
           <ThemeToggle />
