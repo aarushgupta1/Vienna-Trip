@@ -269,6 +269,29 @@ export default function CalendarBoard({
     return () => window.removeEventListener('resize', update);
   }, []);
 
+  // Opens straight to a specific event when the page was loaded via a
+  // shared link (?event=<id>, copied from EditModal's link button) —
+  // recomputes the breakpoint locally rather than reading `daysPerPage`
+  // state so it lands on the right page even before that state has been
+  // corrected for the actual viewport (same reasoning as the effect above).
+  // Runs after the "jump to today" effect so a shared link always wins over
+  // the default today-page behavior.
+  useEffect(() => {
+    const eventId = new URLSearchParams(window.location.search).get('event');
+    if (!eventId) return;
+    const target = attractions.find((a) => a.id === eventId);
+    if (target) {
+      setEditingAttraction(target);
+      if (target.scheduled_date) {
+        const w = window.innerWidth;
+        const dpp = w < 640 ? 1 : w < 1024 ? 2 : DAYS_PER_PAGE;
+        setCurrentPage(pageForDate(target.scheduled_date, dpp));
+      }
+    }
+    window.history.replaceState(null, '', window.location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (!toastMsg) return;
     const t = setTimeout(() => setToastMsg(null), 4000);

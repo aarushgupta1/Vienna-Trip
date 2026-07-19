@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { Attraction, Category } from '@/lib/types';
-import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull, getMapsUrl, nextTripDate, timeAgo } from '@/lib/utils';
+import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull, formatDateShort, getMapsUrl, nextTripDate, timeAgo } from '@/lib/utils';
 import { getCityForDate } from '@/lib/trip';
 import { createAttractionObject, updateAttraction, deleteAttraction, removeTicketUrl } from '@/app/actions';
 import { getEditorName } from '@/lib/editorName';
@@ -12,7 +12,7 @@ import { findTimeConflict } from '@/lib/timeUtils';
 import LocationAutocomplete from './LocationAutocomplete';
 import TimeInput from './TimeInput';
 import ConfirmDialog from './ConfirmDialog';
-import { X, Trash2, Save, Copy, Upload, FileText, WifiOff, MapPin } from 'lucide-react';
+import { X, Trash2, Save, Copy, Upload, FileText, WifiOff, MapPin, ChevronDown, Link2, Check } from 'lucide-react';
 
 interface EditModalProps {
   attraction: Attraction;
@@ -53,9 +53,27 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
   const [duplicateSuccess, setDuplicateSuccess] = useState<string | null>(null);
   const [showDuplicatePicker, setShowDuplicatePicker] = useState(false);
   const [duplicateDate, setDuplicateDate] = useState('');
+  const [linkCopied, setLinkCopied] = useState(false);
   // Based on the saved attraction (not the in-progress form edit) since lat/lng
   // only exist once the location has actually been geocoded on a prior save.
   const mapsUrl = getMapsUrl(attraction);
+
+  // Copies a link that opens straight to this event (?event=<id>) — handled
+  // in CalendarBoard, which reads it on mount, jumps to the right day, and
+  // opens this same modal. Lets someone text "check this out" instead of
+  // "open the app, go to Tuesday, find the dinner reservation."
+  const handleCopyLink = async () => {
+    const url = `${window.location.origin}${window.location.pathname}?event=${attraction.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // Clipboard API can fail (permissions, insecure context) — no real
+      // fallback worth building for a family trip app; worst case the
+      // button just doesn't visibly confirm anything.
+    }
+  };
 
   const handleClose = () => {
     const hasChanges = (Object.keys(initialForm) as (keyof typeof initialForm)[]).some(
@@ -225,12 +243,21 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 rounded-t-2xl">
           <h2 className="font-bold text-gray-900 dark:text-gray-100">Edit Event</h2>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-800"
-          >
-            <X size={17} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleCopyLink}
+              title="Copy a link to this event"
+              className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              {linkCopied ? <Check size={16} className="text-emerald-500" /> : <Link2 size={16} />}
+            </button>
+            <button
+              onClick={handleClose}
+              className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              <X size={17} />
+            </button>
+          </div>
         </div>
 
         {readOnly && (
@@ -298,19 +325,25 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
           {showDuplicatePicker && (
             <div className="-mt-2 flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
               <label className="text-xs font-medium text-gray-500 dark:text-gray-400 shrink-0">
-                Duplicate to
+                To
               </label>
-              <select
-                value={duplicateDate}
-                onChange={(e) => setDuplicateDate(e.target.value)}
-                className="flex-1 min-w-0 px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {generateTripDates().map((d) => (
-                  <option key={d} value={d}>
-                    {formatDateFull(d)} — {getCityForDate(d)}
-                  </option>
-                ))}
-              </select>
+              <div className="relative flex-1 min-w-0">
+                <select
+                  value={duplicateDate}
+                  onChange={(e) => setDuplicateDate(e.target.value)}
+                  className="w-full appearance-none px-2 py-1.5 pr-7 border border-gray-200 dark:border-gray-700 rounded-lg text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {generateTripDates().map((d) => (
+                    <option key={d} value={d}>
+                      {formatDateShort(d)} · {getCityForDate(d)}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={13}
+                  className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+                />
+              </div>
               <button
                 onClick={handleDuplicate}
                 disabled={isPending}
