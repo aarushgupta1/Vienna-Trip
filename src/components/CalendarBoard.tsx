@@ -42,9 +42,9 @@ import AttractionBlock from './AttractionBlock';
 import EditModal from './EditModal';
 import CreateModal from './CreateModal';
 import SearchJumpBox from './SearchJumpBox';
-import CategoryFilterMenu from './CategoryFilterMenu';
+import MoreMenu from './MoreMenu';
 import TimeLabels from './TimeLabels';
-import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, WifiOff, CalendarDays, Bell, BellRing, BellOff, Plus, Search, Map as MapIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, WifiOff, CalendarDays, Plus, Search } from 'lucide-react';
 
 // Leaflet touches `window`/`document` at import time, so it can only ever
 // load on the client — ssr: false keeps it (and its CSS) out of the server
@@ -587,51 +587,20 @@ export default function CalendarBoard({
                 <span className="hidden sm:inline">Search</span>
               </button>
 
-              {/* Map — see a day's events plotted and connected in order, to
-                  gauge how far apart things actually are before committing
-                  to a plan. */}
-              <button
-                onClick={() => setShowMap(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shrink-0"
-                title="See this day's events on a map"
-              >
-                <MapIcon size={13} />
-                <span className="hidden sm:inline">Map</span>
-              </button>
-
               <div className="flex items-center gap-2">
-                {/* Event reminders — offer to enable once; show a quiet status icon after that */}
-                {notifyPermission === 'default' && (
-                  <button
-                    onClick={enablePushNotifications}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-gray-500 dark:text-gray-400 text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                    title="Get a notification 30 minutes before each event starts — delivered even if this app isn't open"
-                  >
-                    <Bell size={13} />
-                    <span className="hidden sm:inline">Alerts</span>
-                  </button>
-                )}
-                {notifyPermission === 'granted' && (
-                  <span
-                    className="flex items-center text-gray-300 dark:text-gray-600"
-                    title="You'll get a notification 30 minutes before each event starts, on this device — even if this app isn't open"
-                  >
-                    <BellRing size={14} />
-                  </span>
-                )}
-                {notifyPermission === 'denied' && (
-                  <span
-                    className="flex items-center text-gray-300 dark:text-gray-600"
-                    title="Notifications are blocked for this site — enable them in your browser's site settings to get 30-minute event alerts"
-                  >
-                    <BellOff size={14} />
-                  </span>
-                )}
+                {/* Map, alerts, and the category filter live in one "More"
+                    menu — occasional actions, not worth a button each. */}
+                <MoreMenu
+                  onOpenMap={() => setShowMap(true)}
+                  notifyPermission={notifyPermission}
+                  onEnableNotifications={enablePushNotifications}
+                  hiddenCategories={hiddenCategories}
+                  onHiddenCategoriesChange={setHiddenCategories}
+                />
 
-                {/* Category filter — hide categories you don't want cluttering the view */}
-                <CategoryFilterMenu hiddenCategories={hiddenCategories} onChange={setHiddenCategories} />
-
-                {/* Timezone toggle */}
+                {/* Timezone toggle — kept visible (not folded into More)
+                    since which one is active is glanceable state you'd want
+                    at rest, not just an occasional action. */}
                 <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-[11px] font-semibold">
                   <button
                     onClick={() => setTimezone('vienna')}
