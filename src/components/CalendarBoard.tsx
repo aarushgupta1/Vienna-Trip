@@ -12,7 +12,7 @@ import {
   TouchSensor,
 } from '@dnd-kit/core';
 import { useState, useTransition, useEffect, useRef } from 'react';
-import { Attraction, DayNote, Hotel } from '@/lib/types';
+import { Attraction, Category, DayNote, Hotel } from '@/lib/types';
 import { generateTripDates, formatDate, timeAgo } from '@/lib/utils';
 import { getEditorName } from '@/lib/editorName';
 import { getCityForDate, CITY_COLORS } from '@/lib/trip';
@@ -41,6 +41,7 @@ import AttractionBlock from './AttractionBlock';
 import EditModal from './EditModal';
 import CreateModal from './CreateModal';
 import SearchJumpBox from './SearchJumpBox';
+import CategoryFilterMenu from './CategoryFilterMenu';
 import TimeLabels from './TimeLabels';
 import { ChevronLeft, ChevronRight, Pencil, PanelLeftOpen, WifiOff, CalendarDays, Bell, BellRing, BellOff, Plus, Search } from 'lucide-react';
 
@@ -174,6 +175,10 @@ export default function CalendarBoard({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [timezone, setTimezone] = useState<'vienna' | 'eastern'>('vienna');
   const [travelModes, setTravelModes] = useState<Record<string, TravelMode>>({});
+  // Purely a view filter — hidden categories are still real events
+  // underneath; everything else (conflict checks, search, drag/resize)
+  // keeps working off the full unfiltered `attractions` state below.
+  const [hiddenCategories, setHiddenCategories] = useState<Category[]>([]);
   const [dayNotes, setDayNotes] = useState<Record<string, string>>(initialDayNotes);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [, startTransition] = useTransition();
@@ -188,7 +193,12 @@ export default function CalendarBoard({
 
   useEffect(() => {
     try { setTravelModes(JSON.parse(localStorage.getItem('vienna-travel-modes') ?? '{}')); } catch {}
+    try { setHiddenCategories(JSON.parse(localStorage.getItem('vienna-hidden-categories') ?? '[]')); } catch {}
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('vienna-hidden-categories', JSON.stringify(hiddenCategories));
+  }, [hiddenCategories]);
 
   // Records the last moment the app was confirmed online, so the offline
   // banner can tell you how stale the cached view you're looking at is
@@ -392,8 +402,11 @@ export default function CalendarBoard({
     (currentPage + 1) * daysPerPage
   );
 
+  // Hidden categories are excluded here only — this feeds DayColumn's
+  // rendering, not the `attractions` state itself, so drag/resize/conflict
+  // checks and search elsewhere in this component still see every event.
   const scheduledByDate = TRIP_DATES.reduce<Record<string, Attraction[]>>((acc, date) => {
-    acc[date] = attractions.filter((a) => a.scheduled_date === date);
+    acc[date] = attractions.filter((a) => a.scheduled_date === date && !hiddenCategories.includes(a.category));
     return acc;
   }, {});
 
@@ -595,6 +608,9 @@ export default function CalendarBoard({
                     <BellOff size={14} />
                   </span>
                 )}
+
+                {/* Category filter — hide categories you don't want cluttering the view */}
+                <CategoryFilterMenu hiddenCategories={hiddenCategories} onChange={setHiddenCategories} />
 
                 {/* Timezone toggle */}
                 <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-[11px] font-semibold">
