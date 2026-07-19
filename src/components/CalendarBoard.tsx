@@ -198,7 +198,6 @@ export default function CalendarBoard({
   // open-then-slam-shut flash on mount), and on desktop the sidebar is always
   // visible regardless of this flag (forced by `sm:translate-x-0` below).
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [timezone, setTimezone] = useState<'vienna' | 'eastern'>('vienna');
   const [travelModes, setTravelModes] = useState<Record<string, TravelMode>>({});
   // Purely a view filter — hidden categories are still real events
   // underneath; everything else (conflict checks, search, drag/resize)
@@ -659,9 +658,15 @@ export default function CalendarBoard({
                 You&apos;re offline — viewing cached data{lastSynced ? ` from ${timeAgo(lastSynced)}` : ''}, read-only until you&apos;re back online.
               </div>
             )}
-            {/* Utility bar — search and the less time-critical controls
-                (reminders, timezone) live here, above the main nav strip, so
-                day-to-day navigation isn't competing with them for space. */}
+            {/* Utility bar — search and the less time-critical controls live
+                here, above the main nav strip, so day-to-day navigation
+                isn't competing with them for space. There's no timezone
+                toggle anymore: every event just shows Vienna/local time,
+                except one flagged "show in Eastern" (e.g. a return flight)
+                which always renders in ET regardless — a fixed per-event
+                pin instead of a global switch, since the two timezones
+                represent permanently different things, not a preference to
+                flip back and forth. */}
             <div className="flex items-center justify-between gap-2 bg-gray-50 dark:bg-gray-950/40 border-b border-gray-100 dark:border-gray-800 px-2 py-1 shrink-0">
               {/* Search/jump — find an event by name or hop straight to any
                   trip day, without paging through the calendar one screen at
@@ -675,38 +680,17 @@ export default function CalendarBoard({
                 <Search size={13} />
               </button>
 
-              <div className="flex items-center gap-2">
-                {/* Map, alerts, and the category filter live in one "More"
-                    menu — occasional actions, not worth a button each. */}
-                <MoreMenu
-                  onOpenMap={() => setShowMap(true)}
-                  notifyPermission={notifyPermission}
-                  notifySubscribed={notifySubscribed}
-                  onEnableNotifications={enablePushNotifications}
-                  onDisableNotifications={disablePushNotifications}
-                  hiddenCategories={hiddenCategories}
-                  onHiddenCategoriesChange={setHiddenCategories}
-                />
-
-                {/* Timezone toggle — kept visible (not folded into More)
-                    since which one is active is glanceable state you'd want
-                    at rest, not just an occasional action. */}
-                <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-[11px] font-semibold">
-                  <button
-                    onClick={() => setTimezone('vienna')}
-                    title="Local time (Vienna, Salzburg & Prague all share the same time zone)"
-                    className={timezone === 'vienna' ? 'px-2.5 py-1 bg-blue-500 text-white' : 'px-2.5 py-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'}
-                  >
-                    CEST
-                  </button>
-                  <button
-                    onClick={() => setTimezone('eastern')}
-                    className={timezone === 'eastern' ? 'px-2.5 py-1 bg-blue-500 text-white' : 'px-2.5 py-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'}
-                  >
-                    ET
-                  </button>
-                </div>
-              </div>
+              {/* Map, alerts, and the category filter live in one "More"
+                  menu — occasional actions, not worth a button each. */}
+              <MoreMenu
+                onOpenMap={() => setShowMap(true)}
+                notifyPermission={notifyPermission}
+                notifySubscribed={notifySubscribed}
+                onEnableNotifications={enablePushNotifications}
+                onDisableNotifications={disablePushNotifications}
+                hiddenCategories={hiddenCategories}
+                onHiddenCategoriesChange={setHiddenCategories}
+              />
             </div>
 
             {/* Main nav strip — sidebar toggle, day navigation, add event, jump to today */}
@@ -791,7 +775,7 @@ export default function CalendarBoard({
 
             {/* Anytime-zone spacer in time-label column + scrollable grid */}
             <div ref={scrollRef} className="flex flex-1 overflow-y-auto overflow-x-hidden">
-              <TimeLabels timezone={timezone} />
+              <TimeLabels />
               {visibleDates.map((date) => (
                 <DayColumn
                   key={date}
@@ -804,7 +788,6 @@ export default function CalendarBoard({
                   travelModes={travelModes}
                   onTravelModeChange={updateTravelMode}
                   readOnly={!isOnline}
-                  timezone={timezone}
                   nowMinutes={date === now?.date ? now.minutes : null}
                 />
               ))}
@@ -820,7 +803,7 @@ export default function CalendarBoard({
             const w = activeAttraction.start_time ? colWidth : 208;
             return (
               <div style={{ width: w }} className="pointer-events-none">
-                <AttractionBlock attraction={activeAttraction} isOverlay height={h} timezone={activeAttraction.pin_eastern ? 'eastern' : timezone} />
+                <AttractionBlock attraction={activeAttraction} isOverlay height={h} timezone={activeAttraction.pin_eastern ? 'eastern' : 'vienna'} />
               </div>
             );
           })()}

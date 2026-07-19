@@ -21,10 +21,8 @@ interface MoreMenuProps {
 // Map, Alerts, and the category filter all used to be their own separate
 // buttons sitting directly in the utility bar — that read as cluttered once
 // there were several of them, so they're consolidated into one "More" panel
-// instead. Search and the timezone toggle stay outside this menu: search is
-// used far more than the rest combined, and timezone is glanceable state
-// (which one is active) that's worth keeping visible at rest rather than
-// hidden behind a click.
+// instead. Search stays outside this menu since it's used far more than the
+// rest combined.
 export default function MoreMenu({
   onOpenMap,
   notifyPermission,

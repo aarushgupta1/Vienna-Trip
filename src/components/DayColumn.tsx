@@ -16,7 +16,6 @@ import {
   minutesToTime,
 } from '@/lib/timeUtils';
 import { TravelSegment, TravelMode, segmentMinutes, formatDistance, isEstimatedMode } from '@/lib/travel';
-import { CalendarTimezone } from '@/lib/utils';
 import AttractionBlock from './AttractionBlock';
 import { Footprints, Bus, Car, TrainFront, ChevronDown } from 'lucide-react';
 
@@ -127,13 +126,12 @@ interface DayColumnProps {
   travelModes: Record<string, TravelMode>;
   onTravelModeChange: (pairKey: string, mode: TravelMode) => void;
   readOnly?: boolean;
-  timezone?: CalendarTimezone;
   // Minutes-since-midnight (Vienna-local) for "right now", only passed in for
   // whichever column is actually today — draws the current-time line.
   nowMinutes?: number | null;
 }
 
-export default function DayColumn({ date, attractions, onAttractionClick, onTimeSlotClick, onAttractionResize, travelSegments, travelModes, onTravelModeChange, readOnly = false, timezone = 'vienna', nowMinutes = null }: DayColumnProps) {
+export default function DayColumn({ date, attractions, onAttractionClick, onTimeSlotClick, onAttractionResize, travelSegments, travelModes, onTravelModeChange, readOnly = false, nowMinutes = null }: DayColumnProps) {
   const timedAttractions = attractions
     .filter((a) => a.start_time)
     .sort((a, b) => a.start_time!.localeCompare(b.start_time!));
@@ -240,7 +238,7 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
                 height={height}
                 onClick={() => onAttractionClick(a)}
                 readOnly={readOnly}
-                timezone={a.pin_eastern ? 'eastern' : timezone}
+                timezone={a.pin_eastern ? 'eastern' : 'vienna'}
               />
               {!readOnly && (
                 <div
