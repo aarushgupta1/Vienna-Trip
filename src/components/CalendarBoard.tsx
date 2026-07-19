@@ -560,7 +560,7 @@ export default function CalendarBoard({
                   a time. Also reachable via the "/" keyboard shortcut. */}
               <button
                 onClick={() => setShowSearch(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-gray-500 dark:text-gray-400 text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shrink-0 self-start"
                 title="Search events or jump to a day (/)"
               >
                 <Search size={13} />
