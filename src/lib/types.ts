@@ -16,9 +16,9 @@ export interface Attraction {
   edited_by: string | null; // self-chosen display name of whoever last saved this — no auth, not verified
   updated_at: string;
   created_at: string;
-  // When true, always displays in Eastern time on the calendar regardless of
-  // the CEST/ET toggle — for the one event (typically a flight home) that's
-  // naturally ET while everything else on the trip is naturally CEST.
+  // When true, always displays in Eastern time on the calendar — for the one
+  // event (typically a flight home) that's naturally ET while everything
+  // else on the trip is naturally CEST.
   pin_eastern: boolean;
 }
 

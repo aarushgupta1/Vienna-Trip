@@ -248,7 +248,7 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
                   onChange={(e) => setForm((f) => ({ ...f, pin_eastern: e.target.checked }))}
                   className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
                 />
-                Show this event in Eastern time (ET), regardless of the calendar&apos;s CEST/ET toggle
+                Show this event in Eastern time (ET)
               </label>
             )}
           </div>
