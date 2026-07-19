@@ -207,3 +207,8 @@ drop policy if exists "public_delete" on event_reminders_sent;
 create policy "public_select" on event_reminders_sent for select using (true);
 create policy "public_insert" on event_reminders_sent for insert with check (true);
 create policy "public_delete" on event_reminders_sent for delete using (true);
+
+-- The trip chatbot feature (and its daily-message-cap table) was removed.
+-- Drops the table from any database that already ran the earlier version of
+-- this file. Safe to re-run either way.
+drop table if exists chat_usage;
