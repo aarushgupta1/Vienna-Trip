@@ -21,7 +21,7 @@ export default function HotelsSidebar({
 }: HotelsSidebarProps) {
   return (
     <div className="w-60 border-r border-gray-200 dark:border-gray-800 flex flex-col bg-white dark:bg-gray-900 shrink-0">
-      <div className="px-4 py-3 border-b border-blue-100 dark:border-gray-800 bg-blue-50/60 dark:bg-gray-950/40 shrink-0">
+      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/40 shrink-0">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <h2 className="font-semibold text-gray-700 dark:text-gray-200 text-sm">Hotels</h2>
