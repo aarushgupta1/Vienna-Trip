@@ -35,10 +35,13 @@ export default function EditorNameBadge() {
       <button
         onClick={openEditor}
         title={name ? 'Change your name' : "What should we call you? Shown on your edits."}
-        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+        className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
       >
-        <User size={12} />
-        {name ?? 'Add your name'}
+        <User size={12} className="shrink-0" />
+        {/* Name/placeholder text is the widest thing in the header bar on a
+            phone screen — icon-only there (same tooltip still explains it on
+            tap-and-hold), full label once there's room. */}
+        <span className="hidden sm:inline max-w-[90px] truncate">{name ?? 'Add your name'}</span>
       </button>
 
       {isEditing && (

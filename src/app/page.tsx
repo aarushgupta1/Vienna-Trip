@@ -21,15 +21,15 @@ export default async function HomePage() {
 
   return (
     <main className="h-dvh flex flex-col bg-gray-50 dark:bg-gray-950">
-      <header className="h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-5 shrink-0 shadow-sm">
-        <div className="flex items-center gap-2">
-          <MapPin size={18} className="text-blue-600 dark:text-blue-400" />
-          <div>
-            <span className="font-bold text-gray-900 dark:text-gray-100 text-base">Vienna · Salzburg · Prague</span>
+      <header className="h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between gap-2 px-3 sm:px-5 shrink-0 shadow-sm">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+          <MapPin size={16} className="shrink-0 text-blue-600 dark:text-blue-400" />
+          <div className="min-w-0">
+            <span className="block truncate font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base">Vienna · Salzburg · Prague</span>
             <span className="hidden sm:inline ml-2 text-xs text-gray-400 dark:text-gray-500">Aug 6 – 16, 2026</span>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           <InstallPrompt />
           <PresenceIndicator />
           <EditorNameBadge />
