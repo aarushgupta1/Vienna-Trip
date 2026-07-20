@@ -81,7 +81,7 @@ function DayHeader({
     <div
       className={[
         'flex-1 border-l border-gray-100 dark:border-gray-800 first:border-l-0 flex flex-col',
-        isToday ? 'bg-blue-50/60 dark:bg-blue-950/30' : '',
+        isToday ? 'bg-blue-100/80 dark:bg-blue-950/40' : '',
       ].join(' ')}
     >
       <div className="text-center pt-2 pb-1 px-1">
@@ -688,7 +688,7 @@ export default function CalendarBoard({
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex h-full overflow-hidden bg-white dark:bg-gray-900 relative">
+        <div className="flex h-full overflow-hidden bg-blue-50/30 dark:bg-gray-900 relative">
           {/* Backdrop for mobile sidebar */}
           {sidebarOpen && (
             <div
@@ -727,7 +727,7 @@ export default function CalendarBoard({
                 pin instead of a global switch, since the two timezones
                 represent permanently different things, not a preference to
                 flip back and forth. */}
-            <div className="flex items-center justify-between gap-2 bg-gray-50 dark:bg-gray-950/40 border-b border-gray-100 dark:border-gray-800 px-2 py-1 shrink-0">
+            <div className="flex items-center justify-between gap-2 bg-blue-50/60 dark:bg-gray-950/40 border-b border-blue-100 dark:border-gray-800 px-2 py-1 shrink-0">
               {/* Search/jump — find an event by name or hop straight to any
                   trip day, without paging through the calendar one screen at
                   a time. Also reachable via the "/" keyboard shortcut. */}
@@ -783,7 +783,7 @@ export default function CalendarBoard({
             </div>
 
             {/* Main nav strip — sidebar toggle, day navigation, add event, jump to today */}
-            <div className="flex items-center bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-2 py-1.5 shrink-0">
+            <div className="flex items-center bg-blue-50/50 dark:bg-gray-900 border-b border-blue-100 dark:border-gray-800 px-2 py-1.5 shrink-0">
               {/* Sidebar toggle — only useful on mobile since sidebar is always visible on desktop */}
               <button
                 onClick={() => setSidebarOpen((o) => !o)}
@@ -845,7 +845,7 @@ export default function CalendarBoard({
             </div>
 
             {/* Header row: time-label spacer + day names */}
-            <div className="flex border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0">
+            <div className="flex border-b border-blue-100 dark:border-gray-800 bg-blue-50/50 dark:bg-gray-900 shrink-0">
               <div className="w-16 shrink-0 border-r border-gray-100 dark:border-gray-800" />
 
               {visibleDates.map((date) => (

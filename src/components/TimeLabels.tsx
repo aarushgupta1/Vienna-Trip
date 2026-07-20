@@ -13,7 +13,7 @@ export default function TimeLabels() {
   const totalHeight = (GRID_END_HOUR - GRID_START_HOUR) * PIXELS_PER_HOUR;
 
   return (
-    <div className="w-16 shrink-0 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900" style={{ height: totalHeight }}>
+    <div className="w-16 shrink-0 border-r border-blue-100 dark:border-gray-800 bg-blue-50/40 dark:bg-gray-900" style={{ height: totalHeight }}>
       {hours.map((hour, i) => (
         <div
           key={hour}

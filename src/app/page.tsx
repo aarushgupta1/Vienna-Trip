@@ -20,8 +20,8 @@ export default async function HomePage() {
   const hotels = await getHotels();
 
   return (
-    <main className="h-dvh flex flex-col bg-gray-50 dark:bg-gray-950">
-      <header className="h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between gap-2 px-3 sm:px-5 shrink-0 shadow-sm">
+    <main className="h-dvh flex flex-col bg-blue-50/40 dark:bg-gray-950">
+      <header className="h-14 bg-blue-50/70 dark:bg-gray-900 border-b border-blue-100 dark:border-gray-800 flex items-center justify-between gap-2 px-3 sm:px-5 shrink-0 shadow-sm">
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
           <MapPin size={16} className="shrink-0 text-blue-600 dark:text-blue-400" />
           <div className="min-w-0">
