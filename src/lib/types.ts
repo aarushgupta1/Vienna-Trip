@@ -34,7 +34,7 @@ export interface DayNote {
   updated_at: string;
 }
 
-export type Currency = 'EUR' | 'USD';
+export type Currency = 'EUR' | 'USD' | 'CZK'; // CZK for Prague — the Czech Republic doesn't use the euro
 
 export interface Hotel {
   id: string;

@@ -117,7 +117,7 @@ create table if not exists hotels (
   check_in            date,
   check_out           date,
   price               numeric,
-  currency            text not null default 'EUR' check (currency in ('EUR', 'USD')),
+  currency            text not null default 'EUR' check (currency in ('EUR', 'USD', 'CZK')),
   confirmation_number text,
   notes               text,
   created_at          timestamptz default now()
@@ -126,6 +126,12 @@ create table if not exists hotels (
 -- Same "last edited by ___" attribution as attractions (see comment above).
 alter table hotels add column if not exists edited_by text;
 alter table hotels add column if not exists updated_at timestamptz default now();
+
+-- Widen the currency check to add CZK (Prague hotels are priced in Czech
+-- koruna, not euros) — the inline check above only applies on first create,
+-- so existing tables need the constraint replaced explicitly.
+alter table hotels drop constraint if exists hotels_currency_check;
+alter table hotels add constraint hotels_currency_check check (currency in ('EUR', 'USD', 'CZK'));
 
 alter table hotels enable row level security;
 

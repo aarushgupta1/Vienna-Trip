@@ -17,7 +17,7 @@ import {
 } from '@/lib/timeUtils';
 import { TravelSegment, TravelMode, segmentMinutes, formatDistance, isEstimatedMode } from '@/lib/travel';
 import AttractionBlock from './AttractionBlock';
-import { Footprints, Bus, Car, TrainFront, ChevronDown } from 'lucide-react';
+import { Footprints, Bus, Car, TrainFront, ChevronDown, AlertTriangle } from 'lucide-react';
 
 const TRAVEL_MODE_ICON: Record<TravelMode, string> = {
   walk: '🚶',
@@ -36,9 +36,14 @@ const TRAVEL_MODE_OPTIONS = [
 const MIN_GAP_PX = 24; // below this the gap is too tight to fit a badge without overlapping events
 
 function TravelBadge({
-  top, height, segment, mode, onModeChange,
+  top, height, segment, mode, onModeChange, insufficient, availableMinutes,
 }: {
   top: number; height: number; segment: TravelSegment; mode: TravelMode; onModeChange: (mode: TravelMode) => void;
+  // True when the actual gap between these two events is shorter than the
+  // estimated travel time for the currently selected mode — i.e. this plan
+  // probably doesn't leave enough time to get there.
+  insufficient: boolean;
+  availableMinutes: number;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -54,26 +59,36 @@ function TravelBadge({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
+  const baseTitle = (estimated ? 'Estimated from typical travel speeds' : 'Estimated driving time (real route)') + ' — click to change how you\'re getting there';
+  const title = insufficient
+    ? `Only ${availableMinutes} min between these events, but getting there takes ~${minutes} min. ${baseTitle}`
+    : baseTitle;
+
   return (
     <div ref={ref} className="absolute left-1 right-1 z-10" style={{ top, height }}>
       {/* connector line running from the event above to the event below, so the
           badge reads as sitting "on the path between them" rather than floating */}
-      <div className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2 border-l-2 border-dashed border-gray-300 dark:border-gray-600 pointer-events-none" />
-      <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600 pointer-events-none" />
-      <div className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600 pointer-events-none" />
+      <div className={['absolute left-1/2 top-0 bottom-0 -translate-x-1/2 border-l-2 border-dashed pointer-events-none', insufficient ? 'border-red-300 dark:border-red-700' : 'border-gray-300 dark:border-gray-600'].join(' ')} />
+      <div className={['absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full pointer-events-none', insufficient ? 'bg-red-300 dark:bg-red-700' : 'bg-gray-300 dark:bg-gray-600'].join(' ')} />
+      <div className={['absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 w-1.5 h-1.5 rounded-full pointer-events-none', insufficient ? 'bg-red-300 dark:bg-red-700' : 'bg-gray-300 dark:bg-gray-600'].join(' ')} />
 
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
-        title={(estimated ? 'Estimated from typical travel speeds' : 'Estimated driving time (real route)') + ' — click to change how you\'re getting there'}
+        title={title}
         className={[
           'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 pl-1.5 pr-1 py-0.5 rounded-full cursor-pointer',
           'border text-[9px] font-medium whitespace-nowrap shadow-sm transition-colors',
-          open
-            ? 'bg-blue-100 dark:bg-blue-900 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300'
-            : 'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900 hover:border-blue-300 dark:hover:border-blue-700',
+          insufficient
+            ? (open
+                ? 'bg-red-100 dark:bg-red-950 border-red-400 dark:border-red-700 text-red-700 dark:text-red-300'
+                : 'bg-red-50 dark:bg-red-950/60 border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900 hover:border-red-400 dark:hover:border-red-700')
+            : (open
+                ? 'bg-blue-100 dark:bg-blue-900 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300'
+                : 'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900 hover:border-blue-300 dark:hover:border-blue-700'),
         ].join(' ')}
       >
+        {insufficient && <AlertTriangle size={9} className="shrink-0" />}
         <span>{TRAVEL_MODE_ICON[mode]}</span>
         <span>{formatDistance(segment.distanceMeters)}</span>
         <span className="opacity-50">·</span>
@@ -265,7 +280,16 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
           const prevBottom = getEventTop(a.start_time!) + aHeight;
           const nextTop = getEventTop(b.start_time!);
           const gap = nextTop - prevBottom;
-          if (gap < MIN_GAP_PX) return null;
+
+          const mode = travelModes[pairKey] ?? 'walk';
+          const neededMinutes = segmentMinutes(segment, mode);
+          const availableMinutes = Math.round(gap / PIXELS_PER_MINUTE);
+          const insufficient = neededMinutes != null && availableMinutes < neededMinutes;
+
+          // Below this gap there's normally no room to show the badge without
+          // overlapping the events around it — but a genuine "you won't make
+          // it" warning is worth showing anyway, just compact.
+          if (gap < MIN_GAP_PX && !insufficient) return null;
 
           return (
             <TravelBadge
@@ -273,8 +297,10 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
               top={prevBottom}
               height={gap}
               segment={segment}
-              mode={travelModes[pairKey] ?? 'walk'}
-              onModeChange={(mode) => onTravelModeChange(pairKey, mode)}
+              mode={mode}
+              onModeChange={(m) => onTravelModeChange(pairKey, m)}
+              insufficient={insufficient}
+              availableMinutes={availableMinutes}
             />
           );
         })}

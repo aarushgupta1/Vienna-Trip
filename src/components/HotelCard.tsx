@@ -4,7 +4,7 @@ import { Hotel } from '@/lib/types';
 import { formatDateShort } from '@/lib/utils';
 import { Calendar, MapPin } from 'lucide-react';
 
-const CURRENCY_SYMBOLS: Record<string, string> = { EUR: '€', USD: '$' };
+const CURRENCY_SYMBOLS: Record<string, string> = { EUR: '€', USD: '$', CZK: 'Kč' };
 
 function nightsBetween(checkIn: string | null, checkOut: string | null): number | null {
   if (!checkIn || !checkOut) return null;

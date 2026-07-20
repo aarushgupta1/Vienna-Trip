@@ -17,8 +17,8 @@ interface HotelModalProps {
   onDeleted?: (deleted: Hotel) => void;
 }
 
-const CURRENCY_OPTIONS: Currency[] = ['EUR', 'USD'];
-const CURRENCY_SYMBOLS: Record<Currency, string> = { EUR: '€', USD: '$' };
+const CURRENCY_OPTIONS: Currency[] = ['EUR', 'USD', 'CZK'];
+const CURRENCY_SYMBOLS: Record<Currency, string> = { EUR: '€', USD: '$', CZK: 'Kč' };
 
 function nightsBetween(checkIn: string, checkOut: string): number | null {
   if (!checkIn || !checkOut) return null;
@@ -298,7 +298,7 @@ export default function HotelModal({ hotel, onClose, onSaved, onDeleted }: Hotel
                   onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
                   disabled={!isOnline}
                   placeholder="0.00"
-                  className="w-full pl-7 pr-3 py-2.5 border border-violet-200 dark:border-violet-800 rounded-lg text-lg font-bold bg-white dark:bg-gray-900 text-violet-700 dark:text-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-500 placeholder-violet-200 dark:placeholder-violet-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full pl-9 pr-3 py-2.5 border border-violet-200 dark:border-violet-800 rounded-lg text-lg font-bold bg-white dark:bg-gray-900 text-violet-700 dark:text-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-500 placeholder-violet-200 dark:placeholder-violet-800 disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
             </div>
