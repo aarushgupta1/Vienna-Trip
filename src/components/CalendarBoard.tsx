@@ -845,7 +845,7 @@ export default function CalendarBoard({
             </div>
 
             {/* Header row: time-label spacer + day names */}
-            <div className="flex border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0">
+            <div className="flex border-b border-blue-100 dark:border-gray-800 bg-gradient-to-b from-blue-50/70 to-white dark:from-gray-900 dark:to-gray-900 shrink-0">
               <div className="w-16 shrink-0 border-r border-gray-100 dark:border-gray-800" />
 
               {visibleDates.map((date) => (
