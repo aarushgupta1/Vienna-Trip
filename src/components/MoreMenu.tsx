@@ -7,6 +7,7 @@ import { NotificationPermissionState } from '@/lib/pushNotifications';
 import { MoreHorizontal, Map as MapIcon, Bell, BellRing, BellOff, Check } from 'lucide-react';
 
 const ALL_CATEGORIES = Object.keys(CATEGORY_LABELS) as Category[];
+const SEEN_KEY = 'vienna-more-menu-seen';
 
 interface MoreMenuProps {
   onOpenMap: () => void;
@@ -33,7 +34,19 @@ export default function MoreMenu({
   onHiddenCategoriesChange,
 }: MoreMenuProps) {
   const [open, setOpen] = useState(false);
+  // Whether this device has ever opened the menu — once it has, the "check
+  // this out" dot shouldn't keep coming back just because, say, alerts are
+  // still un-set-up; a single click is enough to have found it.
+  const [seen, setSeen] = useState(true); // default true until checked, avoids a flash of the dot
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      setSeen(localStorage.getItem(SEEN_KEY) === '1');
+    } catch {
+      // If storage is unavailable, just leave it as seen — not worth nagging.
+    }
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -44,6 +57,15 @@ export default function MoreMenu({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
+  const markSeen = () => {
+    setSeen(true);
+    try {
+      localStorage.setItem(SEEN_KEY, '1');
+    } catch {
+      // Best-effort — worst case the dot just comes back next visit.
+    }
+  };
+
   const toggleCategory = (cat: Category) => {
     onHiddenCategoriesChange(
       hiddenCategories.includes(cat)
@@ -53,12 +75,12 @@ export default function MoreMenu({
   };
 
   const hiddenCount = hiddenCategories.length;
-  const hasBadge = hiddenCount > 0 || notifyPermission === 'default';
+  const hasBadge = !seen && (hiddenCount > 0 || notifyPermission === 'default');
 
   return (
     <div ref={ref} className="relative shrink-0">
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => { setOpen((o) => !o); markSeen(); }}
         className={[
           'relative flex items-center px-2.5 py-1 rounded-lg border transition-colors',
           hiddenCount > 0
