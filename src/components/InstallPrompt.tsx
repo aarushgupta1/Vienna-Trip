@@ -35,24 +35,22 @@ function installUrl(): string {
 //
 // - Mobile with real install support (Chrome/Edge/Android): a single tap
 //   fires the native install prompt directly — nothing fancier needed.
-// - Everywhere else (desktop, iOS Safari, any browser that never offers
-//   native install) shows a QR code for the page instead. On desktop that's
-//   the whole point — scan it with your phone to continue there. On mobile
-//   it doubles as an escape hatch for the common trap where the link was
-//   opened inside an in-app browser (Messages/Slack/Instagram) that Apple
-//   doesn't allow "Add to Home Screen" from at all — scanning with the
-//   Camera app forces it open in real Safari.
-// - Landing back on the page via that QR code (the `?install=1` marker) skips
-//   the QR/button entirely and jumps straight to the actual install action.
+// - Mobile without it (iOS Safari, or any browser that never offers native
+//   install) gets a short text instruction instead — a QR code doesn't make
+//   sense here since you'd be scanning your own phone's screen with its own
+//   camera.
+// - Desktop always shows a QR code, since that's the one case a QR actually
+//   helps: scan it with your phone to continue the install there. Landing
+//   back on the page via that code (the `?install=1` marker) skips the
+//   button entirely and jumps straight to the actual install action.
 export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [dismissed, setDismissed] = useState(true); // default hidden until checked, avoids a flash
   const [open, setOpen] = useState(false);
-  const [autoTriggered, setAutoTriggered] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-  const autoTriggeredRef = useRef(false); // mirrors the state above, for use inside closures below
+  const autoTriggeredRef = useRef(false); // set when landed via the QR code's `?install=1` marker
   const ref = useRef<HTMLDivElement>(null);
 
   const dismiss = () => {
@@ -84,7 +82,6 @@ export default function InstallPrompt() {
     const params = new URLSearchParams(window.location.search);
     if (params.get(INSTALL_PARAM) === '1') {
       autoTriggeredRef.current = true;
-      setAutoTriggered(true);
       setOpen(true);
       params.delete(INSTALL_PARAM);
       const rest = params.toString();
@@ -95,6 +92,7 @@ export default function InstallPrompt() {
       e.preventDefault();
       const evt = e as BeforeInstallPromptEvent;
       if (autoTriggeredRef.current && mobile) {
+        setOpen(false); // the native dialog below is taking over, no need for our own popover
         evt.prompt();
         evt.userChoice.then(({ outcome }) => {
           if (outcome === 'accepted') dismiss();
@@ -125,18 +123,16 @@ export default function InstallPrompt() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
-  // The QR only needs generating once, the first time the popover opens —
-  // skip it entirely if we're already showing the auto-triggered "you're in,
-  // just finish this step" text instead.
+  // Desktop only — mobile's fallback popover is plain text, no QR to generate.
   useEffect(() => {
-    if (!open || autoTriggered || qrDataUrl) return;
+    if (!open || isMobile || qrDataUrl) return;
     QRCode.toDataURL(installUrl(), { width: 160, margin: 1 })
       .then(setQrDataUrl)
       .catch(() => {
         // If generation fails for some reason, the popover just shows the
         // caption with no image — not worth surfacing an error for.
       });
-  }, [open, autoTriggered, qrDataUrl]);
+  }, [open, isMobile, qrDataUrl]);
 
   const nativeAvailable = isMobile && !!deferredPrompt;
 
@@ -175,7 +171,7 @@ export default function InstallPrompt() {
 
       {open && !nativeAvailable && (
         <div className="absolute right-0 top-full mt-1.5 z-50 w-56 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 flex flex-col items-center gap-2 text-center">
-          {autoTriggered ? (
+          {isMobile ? (
             <p className="text-xs text-gray-600 dark:text-gray-300">
               {isIOS ? (
                 <>Tap the Share button, then <strong>Add to Home Screen</strong>.</>
@@ -193,11 +189,7 @@ export default function InstallPrompt() {
               ) : (
                 <div className="w-[140px] h-[140px] rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" />
               )}
-              <p className="text-xs text-gray-600 dark:text-gray-300">
-                {isMobile
-                  ? "Can't install here? Scan with your camera to open this in your browser."
-                  : 'Scan with your phone to install.'}
-              </p>
+              <p className="text-xs text-gray-600 dark:text-gray-300">Scan with your phone to install.</p>
             </>
           )}
         </div>
