@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Download, X } from 'lucide-react';
+import { Smartphone, X } from 'lucide-react';
 import QRCode from 'qrcode';
 
 const DISMISSED_KEY = 'vienna-install-dismissed';
@@ -14,10 +14,10 @@ function isStandalone(): boolean {
   );
 }
 
-// Desktop-only: shows a QR code for the page so you can scan it with your
-// phone and continue the install there. Deliberately doesn't show anything
-// on mobile — how (or whether) a phone can install a PWA varies too much
-// browser to browser to be worth a UI on the device you're already using.
+// Desktop-only: shows a QR code for the page so you can pick it up on your
+// phone (it just opens in the phone's own browser — see the copy below,
+// which deliberately doesn't promise an "install"). Nothing shows on mobile
+// itself, since you're already there.
 export default function InstallPrompt() {
   const [isMobile, setIsMobile] = useState(false);
   const [dismissed, setDismissed] = useState(true); // default hidden until checked, avoids a flash
@@ -88,10 +88,10 @@ export default function InstallPrompt() {
         <button
           onClick={() => setOpen((o) => !o)}
           className="flex items-center gap-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
-          title="Install this app to your home screen"
+          title="Open this page on your phone"
         >
-          <Download size={12} />
-          Get the app
+          <Smartphone size={12} />
+          Open on Phone
         </button>
         <button
           onClick={dismiss}
@@ -114,7 +114,7 @@ export default function InstallPrompt() {
           ) : (
             <div className="w-[140px] h-[140px] rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" />
           )}
-          <p className="text-xs text-gray-600 dark:text-gray-300">Scan with your phone to install.</p>
+          <p className="text-xs text-gray-600 dark:text-gray-300">Scan with your phone&apos;s camera to open this page there.</p>
         </div>
       )}
     </div>
