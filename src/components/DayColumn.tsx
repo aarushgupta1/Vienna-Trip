@@ -221,7 +221,7 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
   };
 
   return (
-    <div className="flex flex-col border-r border-blue-100/70 dark:border-gray-800 bg-blue-50/15 dark:bg-gray-900 flex-1 min-w-0" style={{ height: gridHeight }}>
+    <div className="flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex-1 min-w-0" style={{ height: gridHeight }}>
       <div className={['relative flex-shrink-0', readOnly ? 'cursor-default' : 'cursor-pointer'].join(' ')} style={{ height: gridHeight }} onClick={handleGridClick}>
         {Array.from({ length: GRID_END_HOUR - GRID_START_HOUR }, (_, i) =>
           i === 0 ? null : (
