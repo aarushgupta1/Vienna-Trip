@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Attraction } from '@/lib/types';
 import { CATEGORY_ICONS, formatDate, formatDateFull, formatTime, generateTripDates } from '@/lib/utils';
-import { getCityForDate, CITY_COLORS } from '@/lib/trip';
+import { getCityForDate, getCitiesForDate, CITY_COLORS } from '@/lib/trip';
 import { Search, X, CalendarDays } from 'lucide-react';
 
 interface SearchJumpBoxProps {
@@ -131,7 +131,11 @@ export default function SearchJumpBox({ attractions, onClose, onJumpToDate, onSe
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
                 {tripDates.map((date) => {
                   const { weekday, monthDay } = formatDate(date);
-                  const cityColor = CITY_COLORS[getCityForDate(date)];
+                  // Most days belong to one city, but a day-trip day (like Aug
+                  // 10, Salzburg base with a day trip back to Vienna) belongs
+                  // to more than one — show one dot per city rather than just
+                  // whichever is "primary".
+                  const cities = getCitiesForDate(date);
                   return (
                     <button
                       key={date}
@@ -140,7 +144,11 @@ export default function SearchJumpBox({ attractions, onClose, onJumpToDate, onSe
                     >
                       <span className="text-[9px] font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500">{weekday}</span>
                       <span className="text-xs font-bold text-gray-700 dark:text-gray-200">{monthDay}</span>
-                      <span className={['w-1 h-1 rounded-full', cityColor.dot].join(' ')} />
+                      <span className="flex items-center gap-0.5">
+                        {cities.map((city) => (
+                          <span key={city} className={['w-1 h-1 rounded-full', CITY_COLORS[city].dot].join(' ')} />
+                        ))}
+                      </span>
                     </button>
                   );
                 })}
