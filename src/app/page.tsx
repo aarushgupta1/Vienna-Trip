@@ -25,7 +25,7 @@ export default async function HomePage() {
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
           <MapPin size={16} className="shrink-0 text-blue-600 dark:text-blue-400" />
           <div className="min-w-0">
-            <span className="block truncate font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base">Vienna · Salzburg · Prague</span>
+            <span className="block sm:inline truncate font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base">Vienna · Salzburg · Prague</span>
             <span className="hidden sm:inline ml-2 text-xs text-gray-400 dark:text-gray-500">Aug 6 – 16, 2026</span>
           </div>
         </div>
