@@ -56,9 +56,14 @@ export default function EditModal({ attraction, allAttractions, onClose, onSaved
   const [showDuplicatePicker, setShowDuplicatePicker] = useState(false);
   const [duplicateDates, setDuplicateDates] = useState<string[]>([]);
   const [linkCopied, setLinkCopied] = useState(false);
-  // Based on the saved attraction (not the in-progress form edit) since lat/lng
-  // only exist once the location has actually been geocoded on a prior save.
-  const mapsUrl = getMapsUrl(attraction);
+  // Prefer the precise geocoded coordinates from the last save, but as soon
+  // as the location text is changed, fall back to a plain-text maps link
+  // built from whatever's currently typed — getMapsUrl doesn't need lat/lng,
+  // so there's no need to wait for a save+reopen before showing this at all.
+  const mapsUrl =
+    form.location.trim() === (attraction.location ?? '').trim()
+      ? getMapsUrl(attraction)
+      : getMapsUrl({ lat: null, lng: null, location: form.location });
 
   // Copies a link that opens straight to this event (?event=<id>) — handled
   // in CalendarBoard, which reads it on mount, jumps to the right day, and

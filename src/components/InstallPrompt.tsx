@@ -4,15 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Download, X } from 'lucide-react';
 import QRCode from 'qrcode';
 
-// The event Chrome/Edge/Android fire when the app meets install criteria
-// (valid manifest + service worker + served over HTTPS). Not in lib.dom.d.ts.
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
-
 const DISMISSED_KEY = 'vienna-install-dismissed';
-const INSTALL_PARAM = 'install';
 
 function isStandalone(): boolean {
   return (
@@ -22,35 +14,15 @@ function isStandalone(): boolean {
   );
 }
 
-// Same page, marked so that whoever lands on it via the QR code skips
-// straight to the install step instead of needing to find/tap the button.
-function installUrl(): string {
-  const url = new URL(window.location.href);
-  url.hash = '';
-  url.searchParams.set(INSTALL_PARAM, '1');
-  return url.toString();
-}
-
-// Prompts family members to install the app to their home screen.
-//
-// - Mobile with real install support (Chrome/Edge/Android): a single tap
-//   fires the native install prompt directly — nothing fancier needed.
-// - Mobile without it (iOS Safari, or any browser that never offers native
-//   install) gets a short text instruction instead — a QR code doesn't make
-//   sense here since you'd be scanning your own phone's screen with its own
-//   camera.
-// - Desktop always shows a QR code, since that's the one case a QR actually
-//   helps: scan it with your phone to continue the install there. Landing
-//   back on the page via that code (the `?install=1` marker) skips the
-//   button entirely and jumps straight to the actual install action.
+// Desktop-only: shows a QR code for the page so you can scan it with your
+// phone and continue the install there. Deliberately doesn't show anything
+// on mobile — how (or whether) a phone can install a PWA varies too much
+// browser to browser to be worth a UI on the device you're already using.
 export default function InstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
   const [dismissed, setDismissed] = useState(true); // default hidden until checked, avoids a flash
   const [open, setOpen] = useState(false);
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-  const autoTriggeredRef = useRef(false); // set when landed via the QR code's `?install=1` marker
+  const [qrSvg, setQrSvg] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   const dismiss = () => {
@@ -75,43 +47,13 @@ export default function InstallPrompt() {
 
     const ua = window.navigator.userAgent;
     const iOS = /iphone|ipad|ipod/i.test(ua) && !(window as unknown as { MSStream?: unknown }).MSStream;
-    const mobile = iOS || /android|mobile/i.test(ua);
-    setIsIOS(iOS);
-    setIsMobile(mobile);
+    setIsMobile(iOS || /android|mobile/i.test(ua));
 
-    const params = new URLSearchParams(window.location.search);
-    if (params.get(INSTALL_PARAM) === '1') {
-      autoTriggeredRef.current = true;
-      setOpen(true);
-      params.delete(INSTALL_PARAM);
-      const rest = params.toString();
-      window.history.replaceState({}, '', window.location.pathname + (rest ? `?${rest}` : ''));
-    }
-
-    const onBeforeInstall = (e: Event) => {
-      e.preventDefault();
-      const evt = e as BeforeInstallPromptEvent;
-      if (autoTriggeredRef.current && mobile) {
-        setOpen(false); // the native dialog below is taking over, no need for our own popover
-        evt.prompt();
-        evt.userChoice.then(({ outcome }) => {
-          if (outcome === 'accepted') dismiss();
-        });
-        return;
-      }
-      setDeferredPrompt(evt);
-    };
-    const onInstalled = () => {
-      setDeferredPrompt(null);
-      dismiss();
-    };
-
-    window.addEventListener('beforeinstallprompt', onBeforeInstall);
+    // Auto-dismiss if installed via the browser's own address-bar install
+    // icon rather than our button — no need to keep offering at that point.
+    const onInstalled = () => dismiss();
     window.addEventListener('appinstalled', onInstalled);
-    return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
-      window.removeEventListener('appinstalled', onInstalled);
-    };
+    return () => window.removeEventListener('appinstalled', onInstalled);
   }, []);
 
   useEffect(() => {
@@ -123,37 +65,28 @@ export default function InstallPrompt() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
-  // Desktop only — mobile's fallback popover is plain text, no QR to generate.
+  // Rendered as inline SVG (via qrcode's string renderer) rather than a
+  // canvas-based data URL — canvas reads can get silently blanked out by
+  // Safari's anti-fingerprinting protections, which an SVG string sidesteps
+  // entirely since no canvas is ever touched.
   useEffect(() => {
-    if (!open || isMobile || qrDataUrl) return;
-    QRCode.toDataURL(installUrl(), { width: 160, margin: 1 })
-      .then(setQrDataUrl)
+    if (!open || qrSvg) return;
+    const url = `${window.location.origin}${window.location.pathname}`;
+    QRCode.toString(url, { width: 140, margin: 1 })
+      .then(setQrSvg)
       .catch(() => {
         // If generation fails for some reason, the popover just shows the
         // caption with no image — not worth surfacing an error for.
       });
-  }, [open, isMobile, qrDataUrl]);
+  }, [open, qrSvg]);
 
-  const nativeAvailable = isMobile && !!deferredPrompt;
-
-  const handleClick = async () => {
-    if (nativeAvailable && deferredPrompt) {
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      setDeferredPrompt(null);
-      if (outcome === 'accepted') dismiss();
-      return;
-    }
-    setOpen((o) => !o);
-  };
-
-  if (dismissed) return null;
+  if (dismissed || isMobile) return null;
 
   return (
     <div ref={ref} className="relative">
       <div className="flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/50 pl-2.5 pr-1 py-1">
         <button
-          onClick={handleClick}
+          onClick={() => setOpen((o) => !o)}
           className="flex items-center gap-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
           title="Install this app to your home screen"
         >
@@ -169,29 +102,19 @@ export default function InstallPrompt() {
         </button>
       </div>
 
-      {open && !nativeAvailable && (
+      {open && (
         <div className="absolute right-0 top-full mt-1.5 z-50 w-56 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 flex flex-col items-center gap-2 text-center">
-          {isMobile ? (
-            <p className="text-xs text-gray-600 dark:text-gray-300">
-              {isIOS ? (
-                <>Tap the Share button, then <strong>Add to Home Screen</strong>.</>
-              ) : (
-                <>Use your browser menu and choose <strong>Add to Home Screen</strong> (or Install App).</>
-              )}
-            </p>
+          {qrSvg ? (
+            <div
+              className="w-[140px] h-[140px] rounded-lg bg-white p-1.5"
+              // Trusted content — generated locally by the qrcode library from
+              // our own URL, never from user input.
+              dangerouslySetInnerHTML={{ __html: qrSvg }}
+            />
           ) : (
-            <>
-              {qrDataUrl ? (
-                // A dynamically-generated data URL — next/image's optimizer
-                // doesn't add anything useful here.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={qrDataUrl} alt="QR code to open this app" width={140} height={140} className="rounded-lg" />
-              ) : (
-                <div className="w-[140px] h-[140px] rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" />
-              )}
-              <p className="text-xs text-gray-600 dark:text-gray-300">Scan with your phone to install.</p>
-            </>
+            <div className="w-[140px] h-[140px] rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" />
           )}
+          <p className="text-xs text-gray-600 dark:text-gray-300">Scan with your phone to install.</p>
         </div>
       )}
     </div>

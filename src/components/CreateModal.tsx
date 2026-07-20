@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { Attraction, Category } from '@/lib/types';
-import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull, CalendarTimezone } from '@/lib/utils';
+import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull, getMapsUrl, CalendarTimezone } from '@/lib/utils';
 import { getCityForDate } from '@/lib/trip';
 import { getViennaNow } from '@/lib/viennaTime';
 import { createAttractionObject } from '@/app/actions';
@@ -14,7 +14,7 @@ import { useOnlineStatus } from '@/lib/useOnlineStatus';
 import LocationAutocomplete from './LocationAutocomplete';
 import TimeInput from './TimeInput';
 import ConfirmDialog from './ConfirmDialog';
-import { X, Upload, FileText, WifiOff } from 'lucide-react';
+import { X, Upload, FileText, WifiOff, MapPin } from 'lucide-react';
 
 interface CreateModalProps {
   // Both are provided when opened by clicking a specific grid slot. Left
@@ -55,6 +55,11 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
   const [ticketError, setTicketError] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
   const isOnline = useOnlineStatus();
+
+  // No saved lat/lng yet for a brand new event — getMapsUrl falls back to a
+  // plain-text link built from whatever's currently typed, so this shows up
+  // immediately rather than only after the first save.
+  const mapsUrl = getMapsUrl({ lat: null, lng: null, location: form.location });
 
   const handleClose = () => {
     const hasChanges =
@@ -268,9 +273,23 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
 
           {/* Location */}
           <div>
-            <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-              Location
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                Location
+              </label>
+              {mapsUrl && (
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  <MapPin size={11} />
+                  Open in Maps
+                </a>
+              )}
+            </div>
             <LocationAutocomplete
               value={form.location}
               onChange={(v) => setForm((f) => ({ ...f, location: v }))}

@@ -48,7 +48,15 @@ export default function HotelModal({ hotel, onClose, onSaved, onDeleted }: Hotel
   const [saveError, setSaveError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const mapsUrl = hotel ? getMapsUrl(hotel) : null;
+  // Prefer the precise geocoded coordinates from the last save, but as soon
+  // as the location text is changed (or this is a brand new hotel with no
+  // saved location at all yet), fall back to a plain-text maps link built
+  // from whatever's currently typed — getMapsUrl doesn't need lat/lng, and
+  // waiting for a save+reopen before showing this at all wasn't necessary.
+  const mapsUrl =
+    hotel && form.location.trim() === (hotel.location ?? '').trim()
+      ? getMapsUrl(hotel)
+      : getMapsUrl({ lat: null, lng: null, location: form.location });
   const nights = nightsBetween(form.check_in, form.check_out);
 
   const handleClose = () => {
