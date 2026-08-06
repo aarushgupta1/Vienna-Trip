@@ -128,14 +128,16 @@ function DayHeader({
             })}
           </div>
         )}
-        <div
-          className="mt-0.5 px-1 text-[9px] leading-tight text-gray-400 dark:text-gray-500 truncate"
-          title={`${wordOfDay.language} word of the day: ${wordOfDay.word} — ${wordOfDay.translation}`}
-        >
-          <span className="font-semibold text-gray-500 dark:text-gray-400">{wordOfDay.word}</span>
-          {' · '}
-          {wordOfDay.translation}
-        </div>
+        {isToday && (
+          <div
+            className="mt-0.5 px-1 text-[9px] leading-tight text-gray-400 dark:text-gray-500 truncate"
+            title={`${wordOfDay.language} word of the day: ${wordOfDay.word} — ${wordOfDay.translation}`}
+          >
+            <span className="font-semibold text-gray-500 dark:text-gray-400">{wordOfDay.word}</span>
+            {' · '}
+            {wordOfDay.translation}
+          </div>
+        )}
       </div>
       <div className="px-1.5 pb-1.5">
         {editing ? (
