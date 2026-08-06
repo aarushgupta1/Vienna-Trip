@@ -91,43 +91,41 @@ function DayHeader({
         <div className={['text-sm font-bold leading-snug', isToday ? 'text-blue-700 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'].join(' ')}>
           {monthDay}
         </div>
-        <div className="flex items-center justify-center gap-1 mt-0.5 flex-wrap">
+        {/* One column per city — badge on top, that city's weather directly
+            beneath it — rather than a row of badges followed by a separate
+            stack of weather lines, so on a multi-city day (e.g. Aug 10) it's
+            immediately clear which reading goes with which place. */}
+        <div className="flex items-start justify-center gap-2 mt-0.5 flex-wrap">
           {cities.map((city) => {
             const cityColor = CITY_COLORS[city];
+            const cityWeather = weather?.find((w) => w.city === city);
             return (
-              <div
-                key={city}
-                className={['inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wide', cityColor.bg, cityColor.text].join(' ')}
-                title={city}
-              >
-                <span className={['w-1 h-1 rounded-full', cityColor.dot].join(' ')} />
-                {city}
+              <div key={city} className="flex flex-col items-center gap-0.5">
+                <div
+                  className={['inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wide', cityColor.bg, cityColor.text].join(' ')}
+                  title={city}
+                >
+                  <span className={['w-1 h-1 rounded-full', cityColor.dot].join(' ')} />
+                  {city}
+                </div>
+                {cityWeather && (() => {
+                  const { icon, label } = weatherCodeInfo(cityWeather.code);
+                  return (
+                    <div
+                      className="flex items-center justify-center gap-1 text-[10px] text-gray-500 dark:text-gray-400"
+                      title={`${label}${cityWeather.isForecast ? '' : ' (average)'} — ${city}`}
+                    >
+                      <span>{icon}</span>
+                      <span className="font-medium">{cityWeather.high}°</span>
+                      <span className="text-gray-300 dark:text-gray-600">/{cityWeather.low}°</span>
+                      {!cityWeather.isForecast && <span className="text-gray-300 dark:text-gray-600">~</span>}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}
         </div>
-        {weather && weather.length > 0 && (
-          <div className="flex flex-col items-center gap-0.5 mt-0.5">
-            {weather.map((w) => {
-              const { icon, label } = weatherCodeInfo(w.code);
-              return (
-                <div
-                  key={w.city}
-                  className="flex items-center justify-center gap-1 text-[10px] text-gray-500 dark:text-gray-400"
-                  title={`${label}${w.isForecast ? '' : ' (average)'} — ${w.city}`}
-                >
-                  {cities.length > 1 && (
-                    <span className={['w-1 h-1 rounded-full shrink-0', CITY_COLORS[w.city].dot].join(' ')} />
-                  )}
-                  <span>{icon}</span>
-                  <span className="font-medium">{w.high}°</span>
-                  <span className="text-gray-300 dark:text-gray-600">/{w.low}°</span>
-                  {!w.isForecast && <span className="text-gray-300 dark:text-gray-600">~</span>}
-                </div>
-              );
-            })}
-          </div>
-        )}
         {isToday && (
           <div
             className="mt-0.5 px-1 text-[9px] leading-tight text-gray-400 dark:text-gray-500 truncate"
