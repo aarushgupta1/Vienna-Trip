@@ -33,7 +33,12 @@ interface AttractionBlockProps {
   isCompact?: boolean;
   isOverlay?: boolean;
   readOnly?: boolean;
-  timezone?: CalendarTimezone;
+  // Independent zones for the start and end time labels — a flight's
+  // departure and arrival are naturally in two different zones, so these
+  // aren't tied together the way a single "timezone" prop would imply.
+  // Every other category just passes 'vienna' for both.
+  startTimezone?: CalendarTimezone;
+  endTimezone?: CalendarTimezone;
 }
 
 export default function AttractionBlock({
@@ -43,7 +48,8 @@ export default function AttractionBlock({
   isCompact = false,
   isOverlay = false,
   readOnly = false,
-  timezone = 'vienna',
+  startTimezone = 'vienna',
+  endTimezone = 'vienna',
 }: AttractionBlockProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: attraction.id,
@@ -89,8 +95,8 @@ export default function AttractionBlock({
           <div className={['flex items-center gap-0.5 mt-0.5 opacity-60', colors.text].join(' ')}>
             <Clock size={9} />
             <span className="text-[10px]">
-              {formatTimeInZone(attraction.start_time, timezone)}
-              {attraction.end_time && ` – ${formatTimeInZone(attraction.end_time, timezone)}`}
+              {formatTimeInZone(attraction.start_time, startTimezone)}
+              {attraction.end_time && ` – ${formatTimeInZone(attraction.end_time, endTimezone)}`}
             </span>
           </div>
         )}

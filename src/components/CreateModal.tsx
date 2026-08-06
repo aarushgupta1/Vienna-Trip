@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { Attraction, Category } from '@/lib/types';
-import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull } from '@/lib/utils';
+import { CATEGORY_LABELS, CATEGORY_ICONS, generateTripDates, formatDateFull, CalendarTimezone } from '@/lib/utils';
 import { getCityForDate } from '@/lib/trip';
 import { getViennaNow } from '@/lib/viennaTime';
 import { createAttractionObject } from '@/app/actions';
@@ -44,7 +44,8 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
     start_time: defaultStartTime,
     end_time: defaultEndTime,
     location: '',
-    pin_eastern: false,
+    departure_timezone: 'vienna' as CalendarTimezone,
+    arrival_timezone: 'vienna' as CalendarTimezone,
   };
   const [form, setForm] = useState(initialForm);
   const [pendingTickets, setPendingTickets] = useState<File[]>([]);
@@ -95,7 +96,8 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
             end_time: form.end_time || null,
             notes: null,
             location: form.location.trim() || null,
-            pin_eastern: form.pin_eastern,
+            departure_timezone: form.departure_timezone,
+            arrival_timezone: form.arrival_timezone,
           },
           getEditorName()
         );
@@ -241,15 +243,26 @@ export default function CreateModal({ date, startTime, allAttractions, onClose, 
               ))}
             </div>
             {form.category === 'flights' && (
-              <label className="flex items-center gap-2 mt-2 px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-xs text-gray-600 dark:text-gray-300 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.pin_eastern}
-                  onChange={(e) => setForm((f) => ({ ...f, pin_eastern: e.target.checked }))}
-                  className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
-                />
-                Show this event in Eastern time (ET)
-              </label>
+              <div className="mt-2 px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-xs text-gray-600 dark:text-gray-300 flex flex-col gap-1.5">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.departure_timezone === 'eastern'}
+                    onChange={(e) => setForm((f) => ({ ...f, departure_timezone: e.target.checked ? 'eastern' : 'vienna' }))}
+                    className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                  />
+                  Departure time is in Eastern (ET)
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.arrival_timezone === 'eastern'}
+                    onChange={(e) => setForm((f) => ({ ...f, arrival_timezone: e.target.checked ? 'eastern' : 'vienna' }))}
+                    className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                  />
+                  Arrival time is in Eastern (ET)
+                </label>
+              </div>
             )}
           </div>
 

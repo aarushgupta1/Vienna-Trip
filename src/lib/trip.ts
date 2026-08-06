@@ -23,6 +23,9 @@ export const CITY_SEGMENTS: CitySegment[] = [
   { city: 'Vienna', start: '2026-08-06', end: '2026-08-08' },
   { city: 'Salzburg', start: '2026-08-09', end: '2026-08-11' },
   { city: 'Prague', start: '2026-08-12', end: '2026-08-16' },
+  // Aug 10 is a day trip back to Vienna while still based in Salzburg, so
+  // that one day belongs to both cities — see getCitiesForDate below.
+  { city: 'Vienna', start: '2026-08-10', end: '2026-08-10' },
 ];
 
 export const CITY_INFO: Record<TripCity, { lat: number; lng: number; country: string; timezone: string; shortLabel: string }> = {
@@ -39,7 +42,22 @@ export const CITY_COLORS: Record<TripCity, { text: string; bg: string; dot: stri
   Prague: { text: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-950/50', dot: 'bg-purple-400' },
 };
 
+// The single "primary" city for a date — used anywhere only one city makes
+// sense (geocoding placeholders, the map view, word-of-the-day). On a
+// multi-city day this returns whichever segment is listed first for that
+// date, which is also the city the trip is actually based in that day.
 export function getCityForDate(date: string): TripCity {
   const seg = CITY_SEGMENTS.find((s) => date >= s.start && date <= s.end);
   return seg ? seg.city : CITY_SEGMENTS[CITY_SEGMENTS.length - 1].city;
+}
+
+// Every city a date belongs to, in CITY_ORDER — most days return a single
+// city, but a day trip (like Aug 10, Salzburg → Vienna → Salzburg) can
+// belong to more than one. Used anywhere the UI should show all of them,
+// like the day header's city badges and weather.
+export function getCitiesForDate(date: string): TripCity[] {
+  const matches = CITY_SEGMENTS.filter((s) => date >= s.start && date <= s.end).map((s) => s.city);
+  const unique = [...new Set(matches)];
+  if (unique.length === 0) return [CITY_SEGMENTS[CITY_SEGMENTS.length - 1].city];
+  return unique.sort((a, b) => CITY_ORDER.indexOf(a) - CITY_ORDER.indexOf(b));
 }

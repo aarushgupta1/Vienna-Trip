@@ -9,7 +9,7 @@ const CalendarBoard = dynamic(() => import('./CalendarBoard'));
 
 export default function CalendarBoardClient(props: {
   initialAttractions: Attraction[];
-  weather: Record<string, DayWeather>;
+  weather: Record<string, DayWeather[]>;
   travelSegments: Record<string, TravelSegment>;
   initialDayNotes: Record<string, string>;
   initialHotels: Hotel[];

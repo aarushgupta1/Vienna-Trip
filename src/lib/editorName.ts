@@ -22,4 +22,8 @@ export function setEditorName(name: string): void {
   } catch {
     // Best-effort — if storage is unavailable, edits just go through unattributed.
   }
+  // Lets anything already mounted in this tab (e.g. the presence indicator)
+  // react immediately — a plain localStorage write doesn't fire a 'storage'
+  // event in the same tab that made it, only in other tabs/windows.
+  window.dispatchEvent(new Event('editor-name-changed'));
 }

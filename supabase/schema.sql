@@ -49,12 +49,22 @@ alter table attractions drop column if exists is_checked;
 alter table attractions add column if not exists edited_by text;
 alter table attractions add column if not exists updated_at timestamptz default now();
 
--- Lets one specific event (in practice, a flight home) always render in
--- Eastern time on the calendar regardless of the CEST/ET display toggle,
--- while every other event keeps following that toggle as before — added
--- because a single global toggle can't represent "this one thing is
--- naturally ET, everything else is naturally CEST" at the same time.
-alter table attractions add column if not exists pin_eastern boolean not null default false;
+-- Superseded by separate departure/arrival timezone columns below (a flight's
+-- two ends are naturally in two different zones, so one flag for the whole
+-- event wasn't enough). Safe to re-run either way.
+alter table attractions drop column if exists pin_eastern;
+
+-- For flights: which zone the departure and arrival times each display in
+-- (e.g. an ET departure landing in CEST Vienna). Ignored for non-flight
+-- categories; both default to 'vienna' like every other event.
+alter table attractions add column if not exists departure_timezone text not null default 'vienna';
+alter table attractions add column if not exists arrival_timezone text not null default 'vienna';
+alter table attractions drop constraint if exists attractions_departure_timezone_check;
+alter table attractions add constraint attractions_departure_timezone_check
+  check (departure_timezone in ('vienna', 'eastern'));
+alter table attractions drop constraint if exists attractions_arrival_timezone_check;
+alter table attractions add constraint attractions_arrival_timezone_check
+  check (arrival_timezone in ('vienna', 'eastern'));
 
 -- Enable Row Level Security
 alter table attractions enable row level security;

@@ -238,7 +238,8 @@ export default function DayColumn({ date, attractions, onAttractionClick, onTime
                 height={height}
                 onClick={() => onAttractionClick(a)}
                 readOnly={readOnly}
-                timezone={a.pin_eastern ? 'eastern' : 'vienna'}
+                startTimezone={a.departure_timezone}
+                endTimezone={a.arrival_timezone}
               />
               {!readOnly && (
                 <div

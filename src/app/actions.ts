@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { Attraction, Category, DayNote, Hotel, Currency } from '@/lib/types';
+import { CalendarTimezone } from '@/lib/utils';
 import { geocodeAddress, searchLocations as searchLocationsGeo, GeocodeSuggestion } from '@/lib/geocode';
 
 function getSupabase() {
@@ -36,7 +37,8 @@ export async function createAttractionObject(
     end_time: string | null;
     notes: string | null;
     location: string | null;
-    pin_eastern?: boolean;
+    departure_timezone?: CalendarTimezone;
+    arrival_timezone?: CalendarTimezone;
   },
   editedBy?: string | null
 ): Promise<Attraction> {
@@ -75,7 +77,7 @@ export async function scheduleAttraction(id: string, scheduledDate: string | nul
 
 export async function updateAttraction(
   id: string,
-  data: Partial<Pick<Attraction, 'name' | 'description' | 'category' | 'scheduled_date' | 'start_time' | 'end_time' | 'notes' | 'location' | 'pin_eastern'>>,
+  data: Partial<Pick<Attraction, 'name' | 'description' | 'category' | 'scheduled_date' | 'start_time' | 'end_time' | 'notes' | 'location' | 'departure_timezone' | 'arrival_timezone'>>,
   editedBy?: string | null
 ): Promise<void> {
   // Callers only pass `location` when it actually changed, so re-geocoding

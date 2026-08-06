@@ -1,6 +1,7 @@
-import { CITY_INFO, TripCity, getCityForDate } from './trip';
+import { CITY_INFO, TripCity, CITY_ORDER, getCitiesForDate } from './trip';
 
 export interface DayWeather {
+  city: TripCity;
   high: number; // °F
   low: number; // °F
   code: number; // WMO weather code
@@ -14,17 +15,22 @@ interface DailyBlock {
   weathercode: number[];
 }
 
-export async function getWeatherForDates(dates: string[]): Promise<Record<string, DayWeather>> {
-  const result: Record<string, DayWeather> = {};
+// A date normally belongs to a single city, but a day-trip day (see
+// CITY_SEGMENTS in trip.ts) can belong to more than one — so weather is
+// fetched per (date, city) pair, and a date can map to more than one
+// DayWeather entry.
+export async function getWeatherForDates(dates: string[]): Promise<Record<string, DayWeather[]>> {
+  const result: Record<string, DayWeather[]> = {};
   if (dates.length === 0) return result;
 
-  // Each date belongs to whichever city the trip is in that day, so weather
-  // is fetched per-city rather than from one fixed location.
+  const pairs = dates.flatMap((d) => getCitiesForDate(d).map((city) => ({ date: d, city })));
+
   const byCity = new Map<TripCity, string[]>();
-  for (const d of dates) {
-    const city = getCityForDate(d);
-    byCity.set(city, [...(byCity.get(city) ?? []), d]);
+  for (const { date, city } of pairs) {
+    byCity.set(city, [...(byCity.get(city) ?? []), date]);
   }
+
+  const found = new Set<string>(); // `${date}|${city}`
 
   await Promise.all(
     [...byCity.entries()].map(async ([city, cityDates]) => {
@@ -40,12 +46,14 @@ export async function getWeatherForDates(dates: string[]): Promise<Record<string
           const daily = data.daily;
           daily?.time.forEach((day, i) => {
             if (cityDates.includes(day)) {
-              result[day] = {
+              (result[day] ??= []).push({
+                city,
                 high: Math.round(daily.temperature_2m_max[i]),
                 low: Math.round(daily.temperature_2m_min[i]),
                 code: daily.weathercode[i],
                 isForecast: true,
-              };
+              });
+              found.add(`${day}|${city}`);
             }
           });
         }
@@ -56,9 +64,15 @@ export async function getWeatherForDates(dates: string[]): Promise<Record<string
     })
   );
 
-  const missingDates = dates.filter((d) => !result[d]);
-  if (missingDates.length > 0) {
-    Object.assign(result, await getHistoricalAverages(missingDates));
+  const missingPairs = pairs.filter(({ date, city }) => !found.has(`${date}|${city}`));
+  if (missingPairs.length > 0) {
+    await fillHistoricalAverages(missingPairs, result);
+  }
+
+  // Deterministic order (Vienna before Salzburg before Prague) regardless of
+  // which city's fetch happened to resolve first above.
+  for (const date of Object.keys(result)) {
+    result[date].sort((a, b) => CITY_ORDER.indexOf(a.city) - CITY_ORDER.indexOf(b.city));
   }
 
   return result;
@@ -67,23 +81,27 @@ export async function getWeatherForDates(dates: string[]): Promise<Record<string
 // Dates outside the 16-day forecast window (e.g. a trip planned months out) get
 // a "typical weather" estimate instead: the average of the last 10 years of
 // actual observations for that calendar day, pulled from Open-Meteo's archive.
-// Each city's dates are queried against that city's own coordinates.
-async function getHistoricalAverages(dates: string[]): Promise<Record<string, DayWeather>> {
-  const result: Record<string, DayWeather> = {};
-
+// Each city's dates are queried against that city's own coordinates. Mutates
+// `result` in place (pushing onto each date's array) rather than returning a
+// fresh object, since a date may already have another city's entry in it.
+async function fillHistoricalAverages(
+  pairs: { date: string; city: TripCity }[],
+  result: Record<string, DayWeather[]>
+): Promise<void> {
   const byCity = new Map<TripCity, string[]>();
-  for (const d of dates) {
-    const city = getCityForDate(d);
-    byCity.set(city, [...(byCity.get(city) ?? []), d]);
+  for (const { date, city } of pairs) {
+    byCity.set(city, [...(byCity.get(city) ?? []), date]);
   }
 
   await Promise.all(
     [...byCity.entries()].map(async ([city, cityDates]) => {
-      Object.assign(result, await getHistoricalAveragesForCity(city, cityDates));
+      const cityResult = await getHistoricalAveragesForCity(city, cityDates);
+      for (const date of cityDates) {
+        const entry = cityResult[date];
+        if (entry) (result[date] ??= []).push(entry);
+      }
     })
   );
-
-  return result;
 }
 
 async function getHistoricalAveragesForCity(city: TripCity, dates: string[]): Promise<Record<string, DayWeather>> {
@@ -140,6 +158,7 @@ async function getHistoricalAveragesForCity(city: TripCity, dates: string[]): Pr
     const mostCommonCode = [...codeCounts.entries()].sort((a, b) => b[1] - a[1])[0][0];
 
     result[date] = {
+      city,
       high: Math.round(avg('high')),
       low: Math.round(avg('low')),
       code: mostCommonCode,

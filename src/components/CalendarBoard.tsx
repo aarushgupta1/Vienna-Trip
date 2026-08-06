@@ -14,10 +14,11 @@ import {
 } from '@dnd-kit/core';
 import { useState, useTransition, useEffect, useRef, useMemo } from 'react';
 import { Attraction, Category, DayNote, Hotel } from '@/lib/types';
-import { generateTripDates, formatDate, timeAgo, formatTimeInZone } from '@/lib/utils';
+import { generateTripDates, formatDate, timeAgo, formatTimeInZone, nextTripDate } from '@/lib/utils';
 import { getEditorName } from '@/lib/editorName';
-import { getCityForDate, CITY_COLORS } from '@/lib/trip';
+import { getCitiesForDate, CITY_COLORS } from '@/lib/trip';
 import { DayWeather, weatherCodeInfo } from '@/lib/weather';
+import { getWordOfDay } from '@/lib/wordOfDay';
 import { TravelSegment, TravelMode } from '@/lib/travel';
 import {
   DAYS_PER_PAGE,
@@ -64,14 +65,17 @@ function DayHeader({
   note: string;
   onNoteChange: (v: string) => void;
   onNoteCommit: (v: string) => void;
-  weather?: DayWeather;
+  weather?: DayWeather[];
   readOnly: boolean;
   isToday: boolean;
 }) {
   const { weekday, monthDay } = formatDate(date);
   const [editing, setEditing] = useState(false);
-  const city = getCityForDate(date);
-  const cityColor = CITY_COLORS[city];
+  // A day-trip day (e.g. Aug 10) belongs to more than one city — everything
+  // below renders one badge/weather-line per city rather than assuming a
+  // single one.
+  const cities = getCitiesForDate(date);
+  const wordOfDay = getWordOfDay(date);
 
   return (
     <div
@@ -87,27 +91,51 @@ function DayHeader({
         <div className={['text-sm font-bold leading-snug', isToday ? 'text-blue-700 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'].join(' ')}>
           {monthDay}
         </div>
-        <div
-          className={['inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wide', cityColor.bg, cityColor.text].join(' ')}
-          title={city}
-        >
-          <span className={['w-1 h-1 rounded-full', cityColor.dot].join(' ')} />
-          {city}
+        <div className="flex items-center justify-center gap-1 mt-0.5 flex-wrap">
+          {cities.map((city) => {
+            const cityColor = CITY_COLORS[city];
+            return (
+              <div
+                key={city}
+                className={['inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wide', cityColor.bg, cityColor.text].join(' ')}
+                title={city}
+              >
+                <span className={['w-1 h-1 rounded-full', cityColor.dot].join(' ')} />
+                {city}
+              </div>
+            );
+          })}
         </div>
-        {weather && (() => {
-          const { icon, label } = weatherCodeInfo(weather.code);
-          return (
-            <div
-              className="flex items-center justify-center gap-1 text-[10px] text-gray-500 dark:text-gray-400 mt-0.5"
-              title={`${label}${weather.isForecast ? '' : ' (average)'} — ${city}`}
-            >
-              <span>{icon}</span>
-              <span className="font-medium">{weather.high}°</span>
-              <span className="text-gray-300 dark:text-gray-600">/{weather.low}°</span>
-              {!weather.isForecast && <span className="text-gray-300 dark:text-gray-600">~</span>}
-            </div>
-          );
-        })()}
+        {weather && weather.length > 0 && (
+          <div className="flex flex-col items-center gap-0.5 mt-0.5">
+            {weather.map((w) => {
+              const { icon, label } = weatherCodeInfo(w.code);
+              return (
+                <div
+                  key={w.city}
+                  className="flex items-center justify-center gap-1 text-[10px] text-gray-500 dark:text-gray-400"
+                  title={`${label}${w.isForecast ? '' : ' (average)'} — ${w.city}`}
+                >
+                  {cities.length > 1 && (
+                    <span className={['w-1 h-1 rounded-full shrink-0', CITY_COLORS[w.city].dot].join(' ')} />
+                  )}
+                  <span>{icon}</span>
+                  <span className="font-medium">{w.high}°</span>
+                  <span className="text-gray-300 dark:text-gray-600">/{w.low}°</span>
+                  {!w.isForecast && <span className="text-gray-300 dark:text-gray-600">~</span>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <div
+          className="mt-0.5 px-1 text-[9px] leading-tight text-gray-400 dark:text-gray-500 truncate"
+          title={`${wordOfDay.language} word of the day: ${wordOfDay.word} — ${wordOfDay.translation}`}
+        >
+          <span className="font-semibold text-gray-500 dark:text-gray-400">{wordOfDay.word}</span>
+          {' · '}
+          {wordOfDay.translation}
+        </div>
       </div>
       <div className="px-1.5 pb-1.5">
         {editing ? (
@@ -166,7 +194,7 @@ export default function CalendarBoard({
   initialHotels,
 }: {
   initialAttractions: Attraction[];
-  weather: Record<string, DayWeather>;
+  weather: Record<string, DayWeather[]>;
   travelSegments: Record<string, TravelSegment>;
   initialDayNotes: Record<string, string>;
   initialHotels: Hotel[];
@@ -499,6 +527,17 @@ export default function CalendarBoard({
     return upcoming[0] ?? null;
   }, [attractions, hiddenCategories, now]);
 
+  // "Today"/"Tomorrow" when applicable (most common case, since this is
+  // "what's next"), otherwise the weekday — the chip covers events days
+  // away too (e.g. right after the trip's last event of a given day passes),
+  // so the day needs to be visible, not just the time.
+  const nextEventDayLabel = useMemo(() => {
+    if (!nextEvent || !now) return null;
+    if (nextEvent.scheduled_date === now.date) return 'Today';
+    if (nextEvent.scheduled_date === nextTripDate(now.date)) return 'Tomorrow';
+    return formatDate(nextEvent.scheduled_date!).weekday;
+  }, [nextEvent, now]);
+
   const handleDragStart = (event: DragStartEvent) => {
     setActiveAttraction(attractions.find((a) => a.id === event.active.id) ?? null);
   };
@@ -724,7 +763,7 @@ export default function CalendarBoard({
                     <ArrowRight size={11} className="shrink-0 text-blue-500 dark:text-blue-400" />
                     <span className="text-[11px] font-medium truncate">{nextEvent.name}</span>
                     <span className="text-[11px] opacity-70 shrink-0 tabular-nums">
-                      {formatTimeInZone(nextEvent.start_time!, nextEvent.pin_eastern ? 'eastern' : 'vienna')}
+                      {nextEventDayLabel} · {formatTimeInZone(nextEvent.start_time!, nextEvent.departure_timezone)}
                     </span>
                   </button>
                 </div>
@@ -853,7 +892,13 @@ export default function CalendarBoard({
             const w = activeAttraction.start_time ? colWidth : 208;
             return (
               <div style={{ width: w }} className="pointer-events-none">
-                <AttractionBlock attraction={activeAttraction} isOverlay height={h} timezone={activeAttraction.pin_eastern ? 'eastern' : 'vienna'} />
+                <AttractionBlock
+                  attraction={activeAttraction}
+                  isOverlay
+                  height={h}
+                  startTimezone={activeAttraction.departure_timezone}
+                  endTimezone={activeAttraction.arrival_timezone}
+                />
               </div>
             );
           })()}

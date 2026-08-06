@@ -1,3 +1,5 @@
+import { CalendarTimezone } from './utils';
+
 export type Category = 'museum' | 'food' | 'landmark' | 'entertainment' | 'flights' | 'travel' | 'other';
 
 export interface Attraction {
@@ -16,10 +18,13 @@ export interface Attraction {
   edited_by: string | null; // self-chosen display name of whoever last saved this — no auth, not verified
   updated_at: string;
   created_at: string;
-  // When true, always displays in Eastern time on the calendar — for the one
-  // event (typically a flight home) that's naturally ET while everything
-  // else on the trip is naturally CEST.
-  pin_eastern: boolean;
+  // For flights: which zone the departure and arrival times each display in
+  // — a flight's two ends are naturally in two different zones (e.g. an ET
+  // departure landing in CEST Vienna), so these are independent rather than
+  // one flag for the whole event. Both default to 'vienna' and are ignored
+  // for non-flight categories.
+  departure_timezone: CalendarTimezone;
+  arrival_timezone: CalendarTimezone;
 }
 
 export interface DayNote {
